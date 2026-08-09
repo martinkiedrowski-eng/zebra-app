@@ -17,7 +17,7 @@ export function LeagueTable({ entries }: { entries: TableEntry[] }) {
       </div>
 
       {entries.map((entry, i) => {
-        const isZoneBorder = i > 0 && entry.zone && entries[i - 1].zone !== entry.zone;
+        const isZoneBorder = i > 0 && entry.zone && entries[i - 1]?.zone !== entry.zone;
 
         return (
           <div key={entry.teamId}>
