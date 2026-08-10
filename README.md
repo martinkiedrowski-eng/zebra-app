@@ -526,6 +526,48 @@ ResultRow}.tsx`.
 (`providers/football/openligadb/*`), Match Center, Home, News Hub,
 3.-Liga-Seite, Bottom Navigation, alle Debug-Probes.
 
+## Mehr v1 (Phase 4B)
+
+Kleiner, hochwertiger Service-Bereich statt Sammelbecken — nur Dinge, die
+jetzt tatsächlich funktionieren, keine Platzhalter.
+
+**Hauptseite `/mehr`** (`app/mehr/page.tsx`, komplett ersetzt): drei
+Bereiche — ZebraTV, MSV Duisburg, ZEBRA App — als kompakte Navigationszeilen
+(`components/mehr/NavRow.tsx`, intern mit Chevron, extern mit
+ExternalLink-Icon, beide aus dem bereits installierten `lucide-react`).
+
+- **ZebraTV** (`app/mehr/zebratv/page.tsx`, neu): ruft ausschließlich
+  `fetchYoutubeNews()` aus dem bereits bestehenden
+  `lib/newsFeed/sources/youtube.ts` auf — keine zweite YouTube-
+  Implementierung, kein neuer Feed. Rendering über die bereits bestehende
+  `NewsFeedCard`-Komponente (`variant="list"`, dieselbe wie auf der
+  News-Seite) — kein neuer Card-Typ. Kein eigener Player, Tap öffnet die
+  YouTube-URL extern. Leerer Zustand dezent, kein technischer Fehler.
+- **MSV Duisburg:** nur „Offizielle Website"
+  (`https://www.msv-duisburg.de/`) — das ist die einzige im Projekt
+  bereits belastbar verifizierte MSV-URL (Basis der News-/Debug-Pipeline,
+  wiederholt mit HTTP 200 bestätigt). **Tickets und Fanshop wurden bewusst
+  nicht ergänzt** — dafür lag keine im Projekt belastbare URL vor, siehe
+  Abschlussbericht im Chat.
+- **Über ZEBRA** (`app/mehr/ueber/page.tsx`, neu) und **Datenquellen**
+  (`app/mehr/datenquellen/page.tsx`, neu): statischer Text bzw. eine
+  einfache Liste der vier tatsächlich produktiv genutzten Quellen
+  (OpenLigaDB, MSV Duisburg, ZebraTV/YouTube, liga3-online.de) —
+  RevierSport bewusst nicht aufgeführt (HTTP 403, nicht Teil des
+  produktiven Feeds).
+
+**Rücknavigation:** `components/mehr/BackLink.tsx`, konsistent mit dem
+bestehenden Match-Center-Muster (Pfeil + „Zurück"), auf allen drei
+Unterseiten.
+
+**Bottom Navigation:** nicht verändert — der `/mehr`-Link zeigte bereits
+korrekt auf die (vorher als Placeholder existierende) Route.
+
+**Unverändert:** Home, News Hub, Spiele, 3.-Liga-Seite, Match Center,
+`FootballDataProvider`/`OpenLigaDbFootballProvider`/`MockFootballProvider`,
+OpenLigaDB-Mapping, `tableEngine`/`leagueContext`/`multiplex`,
+News-Aggregations-/Deduplizierungslogik, alle Debug-Probes.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
