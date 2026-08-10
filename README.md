@@ -332,6 +332,58 @@ werden.
 YouTube-, liga3- und RevierSport-Probes sowie deren Anzeige sind
 unverändert.
 
+### Finaler msv-duisburg.de-Parser (Phase 3J)
+
+Ersetzt die alte Regex-Heuristik (0 Treffer) durch einen cheerio-basierten
+DOM-Parser, gebaut ausschließlich auf Basis der live auf Vercel
+verifizierten Struktur:
+
+- **Container:** `ul.news-list`, ein `<li>` pro Artikel.
+- **Artikel-Filter:** nur `<a>`-Links, deren `href` `/aktuelles/artikel/`
+  enthält — alles andere (Navigation, Tickets, Newsletter) wird ignoriert.
+- **Titel/Kategorie-Trennung:** der sichtbare Titeltext folgt live
+  bestätigt dem Muster `"<Präfix> | <Headline>"` (z.B. `ZebraTV |
+  "Stimmung war unglaublich": …`). `parseMsvNewsList()` trennt das sauber:
+  alles vor dem ersten `|` wird `category`, der Rest `title`. Kein `|`
+  gefunden → `category: null`, kompletter Text bleibt Titel (nichts
+  geraten). Ein eventuell vorangestelltes Datum (`DD.MM.YYYY`) wird vorher
+  abgeschnitten.
+- **ZebraTalente-Filter:** explizit, nachvollziehbar, eigener
+  Regex-Vergleich (`/^zebratalente$/i`) auf das extrahierte
+  `category`-Feld — diese Artikel werden gezählt (`excludedZebraTalente`),
+  aber nicht in `articles` aufgenommen.
+- **Datum:** bevorzugt `time[datetime]` im `<li>`, sonst sichtbarer
+  Zeittext, sonst ein `DD.MM.YYYY`-Textmuster im Item — nichts davon wird
+  in ein anderes Format umgerechnet, um keine Zeitzonen-Annahme zu
+  erfinden.
+- **Bild:** ausschließlich aus tatsächlich im DOM gefundenen Attributen
+  (`img[src]`, `img[data-src]`, `img[data-lazy-src]`, `source[srcset]`,
+  in dieser Reihenfolge) — `data:`-URIs (Base64-Platzhalter) werden
+  explizit übersprungen, keine URL wird konstruiert.
+- **Fehlertoleranz:** jedes `<li>` einzeln in try/catch — ein defekter
+  Teaser wird gezählt (`skippedInvalid`) und übersprungen, der Rest des
+  Feeds bleibt unberührt.
+- **Source-Feld:** konstant `"MSV Duisburg (offiziell)"`.
+
+**Neue Datei:** `_probe/parseMsvNews.ts` — bewusst als reine, von Next.js
+unabhängige Funktion geschrieben, damit sie unverändert in einen
+künftigen echten News-Provider übernommen werden kann, sobald der News
+Hub gebaut wird. Liegt aktuell noch im Debug-Modul, weil der Hub selbst
+laut Vorgabe noch nicht gebaut werden soll.
+
+**`fetchMsv.ts` geändert:** nutzt jetzt `parseMsvNewsList()` statt der
+alten Regex-Funktion; robots.txt-Check, Kategorie-ID-Check und die
+Struktur-Diagnose (Phase 3I) bleiben unverändert zusätzlich erhalten, die
+Debug-Seite zeigt jetzt also sowohl das Parser-Ergebnis als auch weiterhin
+die Rohdiagnose.
+
+**Ehrlicher Hinweis:** Ich konnte den neuen Parser in dieser Sandbox nicht
+gegen die echte Vercel-Response laufen lassen (weiterhin kein
+Netzwerkzugriff). Er ist ausschließlich aus den von dir gemeldeten,
+tatsächlich beobachteten Fakten abgeleitet — bitte nach dem Deploy auf
+`/debug/content-sources` prüfen, ob `containerFound`/Item-Anzahl/
+ZebraTalente-Zähler den Erwartungen entsprechen.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

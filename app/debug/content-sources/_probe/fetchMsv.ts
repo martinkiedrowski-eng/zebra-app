@@ -1,6 +1,7 @@
 import { ProbeResult, ProbeItem, emptyResult } from "./types";
-import { fetchText, fetchTextWithMeta, decodeEntities } from "./util";
+import { fetchText, fetchTextWithMeta } from "./util";
 import { diagnoseMsvHtml } from "./diagnoseMsv";
+import { parseMsvNewsList } from "./parseMsvNews";
 
 const NEWS_OVERVIEW_URL = "https://www.msv-duisburg.de/aktuelles/newsuebersicht/";
 const ROBOTS_URL = "https://www.msv-duisburg.de/robots.txt";
@@ -88,46 +89,6 @@ function checkCategoryIds(html: string, result: ProbeResult): void {
   }
 }
 
-function extractTeasersHeuristic(html: string, result: ProbeResult): void {
-  // Bestehende, bereits als unzuverlässig bekannte Heuristik — unverändert
-  // beibehalten (liefert aktuell 0 Treffer), NICHT durch die neue
-  // cheerio-Diagnose ersetzt. Die Diagnose unten liefert die Grundlage für
-  // den künftigen echten Parser.
-  const anchorRe = /<a[^>]+href=["']([^"']*\/aktuelles\/artikel\/[^"']+)["'][^>]*title=["']([^"']*)["']/gi;
-  const seen = new Set<string>();
-  const found: { url: string; title: string; index: number }[] = [];
-
-  let match: RegExpExecArray | null;
-  while ((match = anchorRe.exec(html)) !== null && found.length < 3) {
-    const url = match[1] ?? "";
-    const title = match[2] ?? "";
-    if (!url || seen.has(url)) continue;
-    seen.add(url);
-    found.push({ url, title, index: match.index });
-  }
-
-  if (found.length === 0) {
-    result.notes.push("Bisherige heuristische Teaser-Extraktion (Regex): weiterhin 0 Treffer.");
-    return;
-  }
-
-  result.items = found.map(({ url, title, index }): ProbeItem => {
-    const windowStart = Math.max(0, index - 600);
-    const windowEnd = Math.min(html.length, index + 600);
-    const context = html.slice(windowStart, windowEnd);
-    const dateMatch = context.match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
-    const imgMatch = context.match(/<img[^>]+src=["']([^"']+)["']/i);
-
-    return {
-      title: decodeEntities(title)?.trim() ?? null,
-      date: dateMatch ? dateMatch[1] ?? null : null,
-      url: url.startsWith("http") ? url : `https://www.msv-duisburg.de${url}`,
-      teaser: null,
-      image: imgMatch ? imgMatch[1] ?? null : null,
-    };
-  });
-}
-
 export async function probeMsv(): Promise<ProbeResult> {
   const result = emptyResult("msv-duisburg.de");
 
@@ -150,14 +111,37 @@ export async function probeMsv(): Promise<ProbeResult> {
   }
 
   checkCategoryIds(res.text, result);
-  extractTeasersHeuristic(res.text, result);
 
-  result.itemCount = result.items.length;
-  result.parseSuccess = result.items.length > 0;
-  result.status = result.parseSuccess
-    ? "OK (heuristische Extraktion)"
-    : "Seite erreichbar, Regex-Heuristik findet weiterhin 0 Items — siehe Struktur-Diagnose unten";
+  // --- Finaler Parser (ersetzt die frühere Regex-Heuristik) ---------
+  const parsed = parseMsvNewsList(res.text, res.finalUrl);
 
+  if (!parsed.containerFound) {
+    result.status = "ul.news-list nicht gefunden — Seitenstruktur hat sich vermutlich geändert";
+    result.itemCount = 0;
+    result.parseSuccess = false;
+  } else {
+    result.items = parsed.articles.slice(0, 5).map(
+      (a): ProbeItem => ({
+        title: a.title,
+        date: a.publishedAt,
+        url: a.url,
+        teaser: null,
+        image: a.image,
+        extra: { category: a.category, source: a.source },
+      })
+    );
+    result.itemCount = parsed.articles.length;
+    result.parseSuccess = parsed.articles.length > 0;
+    result.status = result.parseSuccess
+      ? `OK — ${parsed.articles.length} Profi-News geparst (ul.news-list)`
+      : "ul.news-list gefunden, aber 0 gültige Profi-Artikel extrahiert";
+  }
+
+  result.notes.push(`ul.news-list gefunden: ${parsed.containerFound ? "ja" : "nein"}`);
+  result.notes.push(`Ausgeschlossene ZebraTalente-Beiträge: ${parsed.excludedZebraTalente}`);
+  result.notes.push(`Übersprungene ungültige Einträge: ${parsed.skippedInvalid}`);
+
+  // --- Struktur-Diagnose bleibt zur weiteren Validierung erhalten ---
   try {
     const diagnostics = diagnoseMsvHtml(res.text, res.finalUrl, res.status, res.contentType);
     diagnostics.robotsAssessment = robotsAssessment;
