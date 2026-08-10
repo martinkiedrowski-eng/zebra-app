@@ -28,6 +28,16 @@ export class MockFootballProvider implements FootballDataProvider {
     return this.delay(MOCK_LAST_MATCH);
   }
 
+  /** Mock kennt keine Season-Liste — liefert ehrlich nur das eine vorhandene Next-Match (0-1 Einträge). */
+  async getUpcomingMsvMatches(count: number): Promise<Match[]> {
+    return this.delay([MOCK_NEXT_MATCH].slice(0, count));
+  }
+
+  /** Mock kennt keine Season-Liste — liefert ehrlich nur das eine vorhandene Last-Match (0-1 Einträge). */
+  async getRecentMsvResults(count: number): Promise<Match[]> {
+    return this.delay([MOCK_LAST_MATCH].slice(0, count));
+  }
+
   async getLiveMatch(): Promise<Match | null> {
     // In der ersten vertikalen Scheibe bewusst kein Live-Spiel im Mock,
     // damit Home im geforderten "Next Up"-Zustand gezeigt wird.

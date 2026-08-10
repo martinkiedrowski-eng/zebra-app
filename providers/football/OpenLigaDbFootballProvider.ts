@@ -67,6 +67,25 @@ export class OpenLigaDbFootballProvider implements FootballDataProvider {
     return finished[0] ?? null;
   }
 
+  /** Phase 4A / Spiele-Tab: identisches Filtermuster wie getNextMatch(), nur als Liste statt Einzelspiel. */
+  async getUpcomingMsvMatches(count: number): Promise<Match[]> {
+    const matches = await this.seasonMatches();
+    const now = Date.now();
+    return matches
+      .filter((m) => m.status === "scheduled" && m.isMsvMatch && new Date(m.kickoff).getTime() > now)
+      .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime())
+      .slice(0, count);
+  }
+
+  /** Phase 4A / Spiele-Tab: identisches Filtermuster wie getLastMatch(), nur als Liste statt Einzelspiel. */
+  async getRecentMsvResults(count: number): Promise<Match[]> {
+    const matches = await this.seasonMatches();
+    return matches
+      .filter((m) => m.status === "finished" && m.isMsvMatch)
+      .sort((a, b) => new Date(b.kickoff).getTime() - new Date(a.kickoff).getTime())
+      .slice(0, count);
+  }
+
   async getLiveMatch(): Promise<Match | null> {
     const matches = await this.seasonMatches();
     const live = matches.filter((m) => (m.status === "live" || m.status === "halftime") && m.isMsvMatch);

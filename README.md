@@ -488,6 +488,44 @@ Engine-Funktionen. Keine neue Produktionslogik, keine bestehende Seite
 verändert. Siehe `ZEBRA-Matchday-Reality-Check.md` für den vollständigen
 Befund.
 
+## Spiele-Tab v1 (Phase 4A)
+
+Der bisherige Placeholder-Tab „Spiele" beantwortet jetzt: *Wann spielt der
+MSV als Nächstes – und wie liefen die letzten Spiele?* Drei Bereiche:
+Nächstes Spiel (Hero-Card mit HEUTE/MORGEN-Label + Countdown), Kommende
+Spiele (kompakte Liste), Ergebnisse (kompakte Liste mit dezentem
+S/U/N-Badge). Bewusst **keine** Matchday-/Live-Logik — die kommt erst nach
+dem echten 3.-Liga-Live-Test über `/debug/matchday`.
+
+**Wichtige, transparente Abweichung:** Für „Kommende Spiele" und
+„Ergebnisse" als echte Listen (Mehrzahl) gab es **keine** ausreichende
+bestehende Provider-Methode — nur `getNextMatch()`/`getLastMatch()` (je
+ein einzelnes Spiel). Ich habe deshalb zwei minimale, rein additive
+Methoden ergänzt:
+
+- `FootballDataProvider.ts`: `getUpcomingMsvMatches(count)` /
+  `getRecentMsvResults(count)` — neue Interface-Signaturen, Dokumentation
+  direkt im Interface.
+- `OpenLigaDbFootballProvider.ts`: nutzt für beide **ausschließlich** die
+  bereits vorhandene private `seasonMatches()` — dasselbe Filtermuster
+  wie das bestehende `getNextMatch()`/`getLastMatch()`, nur als Liste
+  statt Einzelspiel. Keine neue Fetch- oder Mapping-Logik, keine
+  bestehende Methode verändert.
+- `MockFootballProvider.ts`: liefert ehrlich nur 0–1 Einträge (basierend
+  auf den vorhandenen `MOCK_NEXT_MATCH`/`MOCK_LAST_MATCH`) — der Mock hat
+  keine Season-Liste, das wird nicht vorgetäuscht. Keine Mock-Datendatei
+  verändert.
+
+**Neue Dateien:** `lib/spiele/matchResult.ts` (S/U/N aus MSV-Sicht,
+`null` bei unvollständigem Ergebnis), `lib/spiele/relativeDate.ts`
+(HEUTE/MORGEN), `components/spiele/{NextMatchCard,UpcomingMatchRow,
+ResultRow}.tsx`.
+
+**Unverändert:** `lib/tableEngine.ts`, `lib/leagueContext.ts`,
+`lib/multiplex.ts`, alle OpenLigaDB-Mapping-Dateien
+(`providers/football/openligadb/*`), Match Center, Home, News Hub,
+3.-Liga-Seite, Bottom Navigation, alle Debug-Probes.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

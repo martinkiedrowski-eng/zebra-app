@@ -29,6 +29,15 @@ export interface FootballDataProvider {
   getTeamForm(teamId: string, count: number): Promise<FormMatch[]>;
   getTeamTableEntry(teamId: string): Promise<TableEntry | null>;
   getMatchAvailability(matchId: string): Promise<MatchAvailability>;
+  /**
+   * Für den Spiele-Tab (Phase 4A): mehrere künftige/vergangene MSV-Spiele
+   * als Liste, chronologisch sortiert. Rein additiv — nutzt in beiden
+   * Implementierungen ausschließlich bereits vorhandene interne
+   * Datenquellen (dieselbe Season-/Match-Basis wie getNextMatch()/
+   * getLastMatch()), keine neue Fetch- oder Mapping-Logik.
+   */
+  getUpcomingMsvMatches(count: number): Promise<Match[]>;
+  getRecentMsvResults(count: number): Promise<Match[]>;
 
   // 3. Liga / Spieltag-Multiplex
   /** Aktuelle/reguläre Tabelle (kann bereits Ergebnisse des laufenden Spieltags enthalten). */
