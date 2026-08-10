@@ -288,6 +288,50 @@ komplett wieder entfernt wird. Alle Netz-Zugriffe mit 8s-Timeout,
 vollständigen HTML/XML-Dokumente geloggt (nur einzelne Feldwerte,
 Teaser auf 300 Zeichen gekürzt).
 
+### Struktur-Diagnose für msv-duisburg.de (Phase 3I)
+
+Der bisherige Regex-Parser für msv-duisburg.de lieferte auf Vercel 0 Items
+(bestätigt real: HTTP 200, aber Struktur passt nicht zur Annahme). Statt
+weiter zu raten, zeigt der Probe für diese Quelle jetzt zusätzlich eine
+**Struktur-Diagnose** — reine Beobachtung, noch kein Parser:
+
+- **A) Page Info:** finale URL nach Redirects, HTTP-Status, Content-Type,
+  HTML-Länge.
+- **B) Link Diagnostics:** Gesamtzahl Links, interne Links, News-artige
+  Links, bis zu 20 Content-Link-Samples (href, bereinigter Linktext,
+  `class` von Link/Parent/nächstem klassifizierten Vorfahren) —
+  Nav/Header/Footer-Links werden ausgeschlossen.
+- **C) Structure Diagnostics:** häufigste Klassennamen, wiederkehrende
+  Container (Tag+Klasse), vorkommende Tags (`article`, `time`, `picture`,
+  `img`, `h2`–`h4`), `datetime`-Werte, Bild-Attribute (`src`/`data-src`/
+  `srcset`) für bis zu 5 Teaser.
+- **D) Text Samples:** bis zu 5 vollständige Container-Strukturen
+  (Tag/Klasse, Headline, Link, Datum, Bild-Attribute, Kategorie,
+  Text-Ausschnitt max. 250 Zeichen).
+- **F) Robots:** zusätzlich zum bisherigen robots.txt-Auszug jetzt eine
+  klare Aussage, ob eine `Disallow`-Regel für `User-agent: *` den
+  genutzten Pfad betrifft — ausschließlich basierend auf dem, was in der
+  robots.txt tatsächlich steht.
+
+**Neue Dateien:** `_probe/diagnoseMsv.ts`, ergänzte Typen in `_probe/types.ts`
+(`MsvDiagnostics` u.a.), erweiterte `_probe/util.ts`
+(`fetchTextWithMeta` — additiv, `fetchText` bleibt für die anderen drei
+Quellen unverändert), erweiterte `_probe/fetchMsv.ts` (bisherige
+Regex-Heuristik unverändert erhalten, Diagnose kommt zusätzlich hinzu),
+erweiterte `page.tsx` (neuer `MsvDiagnosticsBlock`, rein additiv).
+
+**Neue Abhängigkeit:** `cheerio` (`package.json`) — ein reines,
+weit verbreitetes JS-HTML-Parsing-Paket ohne native Bindings. Für die
+verlangte Parent-/Container-Ermittlung ist ein echter DOM-Parser
+notwendig; das per Regex zuverlässig nachzubauen wäre fehleranfällig und
+hätte die Diagnose selbst unglaubwürdig gemacht. Ausschließlich in diesem
+Debug-Modul verwendet — verschwindet mit `app/debug/`, falls das Paket
+dann nicht mehr gebraucht wird, kann es aus `package.json` wieder entfernt
+werden.
+
+YouTube-, liga3- und RevierSport-Probes sowie deren Anzeige sind
+unverändert.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

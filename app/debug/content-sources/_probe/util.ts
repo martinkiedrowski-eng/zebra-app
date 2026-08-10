@@ -10,16 +10,30 @@ const TIMEOUT_MS = 8000;
 export async function fetchText(
   url: string
 ): Promise<{ status: number; contentType: string | null; text: string } | { error: string }> {
+  const result = await fetchTextWithMeta(url);
+  if ("error" in result) return result;
+  return { status: result.status, contentType: result.contentType, text: result.text };
+}
+
+/**
+ * Wie fetchText, liefert zusätzlich die finale URL nach Redirects und die
+ * HTML-Länge — für die msv-duisburg.de-Struktur-Diagnose gebraucht, die
+ * anderen Probes nutzen weiterhin fetchText() unverändert.
+ */
+export async function fetchTextWithMeta(
+  url: string
+): Promise<
+  | { status: number; contentType: string | null; text: string; finalUrl: string }
+  | { error: string }
+> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     const res = await fetch(url, {
       cache: "no-store",
       signal: controller.signal,
+      redirect: "follow",
       headers: {
-        // Manche Seiten liefern an "nackte" Server-Fetches ohne UA einen
-        // anderen/leeren Response — ein harmloser Browser-UA ist hier
-        // reine Kompatibilität, kein Umgehen von Schutzmaßnahmen.
         "User-Agent": "Mozilla/5.0 (compatible; ZebraContentProbe/0.1; debug-only)",
       },
     });
@@ -28,6 +42,7 @@ export async function fetchText(
       status: res.status,
       contentType: res.headers.get("content-type"),
       text,
+      finalUrl: res.url || url,
     };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Unbekannter Fetch-Fehler" };

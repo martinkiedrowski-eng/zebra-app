@@ -114,7 +114,134 @@ function ResultBlock({ result }: { result: ProbeResult }) {
           ))}
         </div>
       )}
+
+      {result.diagnostics && <MsvDiagnosticsBlock diagnostics={result.diagnostics} />}
     </section>
+  );
+}
+
+function MsvDiagnosticsBlock({ diagnostics }: { diagnostics: NonNullable<ProbeResult["diagnostics"]> }) {
+  return (
+    <div style={{ marginTop: 20, borderTop: "1px dashed #444", paddingTop: 16 }}>
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>Struktur-Diagnose (msv-duisburg.de)</h3>
+
+      <h4 style={{ fontSize: 13, fontWeight: 700, margin: "12px 0 4px" }}>A) Page Info</h4>
+      <div style={{ fontSize: 12 }}>
+        <div>Finale URL: {diagnostics.pageInfo.finalUrl}</div>
+        <div>HTTP Status: {diagnostics.pageInfo.httpStatus}</div>
+        <div>Content-Type: {diagnostics.pageInfo.contentType ?? "—"}</div>
+        <div>HTML-Länge: {diagnostics.pageInfo.htmlLength.toLocaleString("de-DE")} Zeichen</div>
+      </div>
+
+      <h4 style={{ fontSize: 13, fontWeight: 700, margin: "12px 0 4px" }}>F) Robots</h4>
+      <div style={{ fontSize: 12 }}>{diagnostics.robotsAssessment}</div>
+
+      <h4 style={{ fontSize: 13, fontWeight: 700, margin: "12px 0 4px" }}>B) Link Diagnostics</h4>
+      <div style={{ fontSize: 12, marginBottom: 8 }}>
+        <div>Gesamtzahl Links: {diagnostics.linkDiagnostics.totalLinks}</div>
+        <div>Interne Links: {diagnostics.linkDiagnostics.internalLinks}</div>
+        <div>News-artige Links: {diagnostics.linkDiagnostics.newsLikeLinks}</div>
+        <div>Angezeigte Content-Link-Samples: {diagnostics.linkDiagnostics.samples.length}</div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {diagnostics.linkDiagnostics.samples.map((s, i) => (
+          <div key={i} style={{ border: "1px solid #2a2a2a", padding: 6, fontSize: 11 }}>
+            <div>
+              <strong>href:</strong> {s.href}
+            </div>
+            <div>
+              <strong>text:</strong> {s.text ?? "—"}
+            </div>
+            <div>
+              <strong>a.class:</strong> {s.linkClass ?? "—"}
+            </div>
+            <div>
+              <strong>parent:</strong> {s.parentTag ?? "—"}.{s.parentClass ?? "(keine class)"}
+            </div>
+            <div>
+              <strong>container:</strong> {s.containerTag ?? "—"}.{s.containerClass ?? "(keine class)"}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <h4 style={{ fontSize: 13, fontWeight: 700, margin: "12px 0 4px" }}>C) Structure Diagnostics</h4>
+      <div style={{ fontSize: 12, marginBottom: 6 }}>
+        <strong>Häufige Klassennamen (Top 15):</strong>{" "}
+        {diagnostics.structureDiagnostics.commonClassNames.length > 0
+          ? diagnostics.structureDiagnostics.commonClassNames.map((c) => `${c.className} (${c.count})`).join(", ")
+          : "keine gefunden"}
+      </div>
+      <div style={{ fontSize: 12, marginBottom: 6 }}>
+        <strong>Mögliche wiederkehrende Container:</strong>{" "}
+        {diagnostics.structureDiagnostics.possibleContainers.length > 0
+          ? diagnostics.structureDiagnostics.possibleContainers.map((c) => `${c.tag}.${c.className}`).join(" | ")
+          : "keine gefunden"}
+      </div>
+      <div style={{ fontSize: 12, marginBottom: 6 }}>
+        <strong>Vorkommende Tags:</strong>{" "}
+        {diagnostics.structureDiagnostics.tagsFound.length > 0
+          ? diagnostics.structureDiagnostics.tagsFound.map((t) => `${t.tag} (${t.count})`).join(", ")
+          : "keine der gesuchten Tags gefunden"}
+      </div>
+      <div style={{ fontSize: 12, marginBottom: 6 }}>
+        <strong>datetime-Werte:</strong>{" "}
+        {diagnostics.structureDiagnostics.datetimeValues.length > 0
+          ? diagnostics.structureDiagnostics.datetimeValues.join(", ")
+          : "keine gefunden"}
+      </div>
+      <div style={{ fontSize: 12, marginBottom: 10 }}>
+        <strong>Bild-Attribute (bis 5 Teaser):</strong>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
+          {diagnostics.structureDiagnostics.imageSamples.length > 0 ? (
+            diagnostics.structureDiagnostics.imageSamples.map((img, i) => (
+              <div key={i}>
+                src={img.src ?? "—"} · data-src={img.dataSrc ?? "—"} · srcset=
+                {img.srcset ? "(vorhanden)" : "—"}
+              </div>
+            ))
+          ) : (
+            <div>keine gefunden</div>
+          )}
+        </div>
+      </div>
+
+      <h4 style={{ fontSize: 13, fontWeight: 700, margin: "12px 0 4px" }}>D) Text Samples</h4>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {diagnostics.textSamples.length > 0 ? (
+          diagnostics.textSamples.map((t, i) => (
+            <div key={i} style={{ border: "1px solid #2a2a2a", padding: 6, fontSize: 11 }}>
+              <div>
+                <strong>CONTAINER TAG:</strong> {t.containerTag ?? "—"}
+              </div>
+              <div>
+                <strong>CONTAINER CLASS:</strong> {t.containerClass ?? "—"}
+              </div>
+              <div>
+                <strong>HEADLINE:</strong> {t.headline ?? "—"}
+              </div>
+              <div>
+                <strong>LINK:</strong> {t.link ?? "—"}
+              </div>
+              <div>
+                <strong>DATE/TIME:</strong> {t.date ?? "—"}
+              </div>
+              <div>
+                <strong>IMAGE ATTRIBUTE(S):</strong> {t.imageAttrs ?? "—"}
+              </div>
+              <div>
+                <strong>CATEGORY/TAG:</strong> {t.category ?? "—"}
+              </div>
+              <div>
+                <strong>TEXT SAMPLE:</strong> {t.textSample ?? "—"}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div style={{ fontSize: 12 }}>Keine Text-Samples ermittelbar.</div>
+        )}
+      </div>
+    </div>
   );
 }
 
