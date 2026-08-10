@@ -4,6 +4,7 @@ import { footballDataProvider, newsProvider, IS_DEMO_DATA, IS_MOCK_MODE } from "
 import { MOCK_LIVE_MATCH } from "@/mock/matches";
 import { selectHomeTableExcerpt } from "@/lib/homeTableExcerpt";
 import { MSV_TEAM_ID } from "@/lib/constants";
+import { getAggregatedNews } from "@/lib/newsFeed/aggregate";
 
 // Server Component: lädt über die Provider-Architektur — Mock oder
 // OpenLigaDB, je nach FOOTBALL_DATA_SOURCE (siehe providers/registry.ts).
@@ -18,17 +19,24 @@ import { MSV_TEAM_ID } from "@/lib/constants";
 // lokal über das reine Utility selectHomeTableExcerpt() aus — keine
 // Provider-/Mapping-Änderung, keine Neuberechnung von Positionen, nur eine
 // andere Auswahl aus bereits vorhandenen, fertig sortierten Einträgen.
+//
+// News: nutzt ab jetzt denselben produktiven Aggregator wie /news (siehe
+// lib/newsFeed/aggregate.ts) — unabhängig vom Football-Mock/OpenLigaDB-
+// Modus, echte Quellen, echte Daten. Der bisherige newsProvider.getTopNews()
+// wird hier nicht mehr aufgerufen (Zebra Radar über newsProvider.getRadarEvents()
+// bleibt unverändert, das ist ein eigenes Feature).
 export default async function HomePage() {
-  const [nextMatch, liveMatch, form, fullTable, radarEvents, topNews] = await Promise.all([
+  const [nextMatch, liveMatch, form, fullTable, radarEvents, newsItems] = await Promise.all([
     footballDataProvider.getNextMatch(),
     IS_MOCK_MODE ? Promise.resolve(MOCK_LIVE_MATCH) : footballDataProvider.getLiveMatch(),
     footballDataProvider.getMsvForm(5),
     footballDataProvider.getTable(),
     newsProvider.getRadarEvents(3),
-    newsProvider.getTopNews(5),
+    getAggregatedNews(),
   ]);
 
   const table = selectHomeTableExcerpt(fullTable, MSV_TEAM_ID, 5);
+  const topNews = newsItems.slice(0, 3);
 
   return (
     <AppShell>

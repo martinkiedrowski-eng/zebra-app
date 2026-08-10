@@ -1,8 +1,8 @@
 import * as cheerio from "cheerio";
 
 /**
- * Finaler Parser für https://www.msv-duisburg.de/aktuelles/newsuebersicht/
- * — basiert ausschließlich auf live auf Vercel verifizierten Fakten:
+ * Parser für https://www.msv-duisburg.de/aktuelles/newsuebersicht/ —
+ * basiert ausschließlich auf live auf Vercel verifizierten Fakten:
  *
  * - relevanter Container: ul.news-list
  * - Artikel-Links: href-Muster /aktuelles/artikel/.../
@@ -12,11 +12,10 @@ import * as cheerio from "cheerio";
  *   Präfix ist NICHT dieselbe Kategorie-ID wie newsuebersicht/15|11|5/,
  *   sondern ein separates, pro Artikel sichtbares Tag im Titeltext selbst.
  *
- * Bewusst noch nicht Teil einer News-Provider-Architektur — liegt vorerst
- * im Debug-Modul, weil der eigentliche News Hub laut Vorgabe noch nicht
- * gebaut werden soll. Die Funktion ist aber bereits so geschrieben (reine
- * Funktion, keine Next.js-/Debug-Abhängigkeiten), dass sie unverändert in
- * einen künftigen Provider übernommen werden kann.
+ * Kanonischer, produktiver Ort dieser reinen Funktion. Der temporäre
+ * Debug-Probe (app/debug/content-sources/_probe/fetchMsv.ts) importiert
+ * sie von hier, statt eine zweite Kopie zu pflegen — es gibt nur eine
+ * Wahrheit für "wie wird msv-duisburg.de geparst".
  */
 
 export const MSV_OFFICIAL_SOURCE = "MSV Duisburg (offiziell)";

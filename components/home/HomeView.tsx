@@ -4,14 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { Match } from "@/types/match";
 import { TableEntry, FormMatch } from "@/types/table";
-import { NewsItem } from "@/types/news";
+import { NewsFeedItem } from "@/types/newsFeed";
 import { RadarEvent } from "@/types/radar";
 import { MatchCard } from "@/components/match/MatchCard";
 import { MatchEventsList } from "@/components/match/MatchEventsList";
 import { RadarList } from "@/components/radar/RadarList";
 import { TableExcerpt } from "@/components/table/TableExcerpt";
 import { FormCurve } from "@/components/form/FormCurve";
-import { TopNews } from "@/components/news/TopNews";
+import { NewsFeedRow } from "@/components/news/NewsFeedRow";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
 type MatchState = "next" | "live";
@@ -22,7 +22,7 @@ interface HomeViewProps {
   form: FormMatch[];
   table: TableEntry[];
   radarEvents: RadarEvent[];
-  topNews: NewsItem[];
+  topNews: NewsFeedItem[];
   isDemoData: boolean;
   /** Nur im Mock-Modus gibt es den Next-Up/Live-Dev-Umschalter — im
    *  openligadb-Modus bestimmt allein, ob liveMatch !== null, den Zustand. */
@@ -139,8 +139,8 @@ export function HomeView({
 
         {topNews.length > 0 && (
           <section className="mb-6">
-            <SectionHeader title="Top News" actionLabel="Alle" muted={!!showLive} />
-            <TopNews items={topNews} />
+            <SectionHeader title="Top News" actionLabel="Alle" actionHref="/news" muted={!!showLive} />
+            <NewsFeedRow items={topNews} />
           </section>
         )}
       </div>

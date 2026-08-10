@@ -1,7 +1,7 @@
 import { ProbeResult, ProbeItem, emptyResult } from "./types";
 import { fetchText, fetchTextWithMeta } from "./util";
 import { diagnoseMsvHtml } from "./diagnoseMsv";
-import { parseMsvNewsList } from "./parseMsvNews";
+import { parseMsvNewsList } from "@/lib/newsFeed/parsers/msvParser";
 
 const NEWS_OVERVIEW_URL = "https://www.msv-duisburg.de/aktuelles/newsuebersicht/";
 const ROBOTS_URL = "https://www.msv-duisburg.de/robots.txt";

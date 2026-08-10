@@ -384,6 +384,63 @@ tatsächlich beobachteten Fakten abgeleitet — bitte nach dem Deploy auf
 `/debug/content-sources` prüfen, ob `containerFound`/Item-Anzahl/
 ZebraTalente-Zähler den Erwartungen entsprechen.
 
+## News Hub v1 (Phase 3K)
+
+Die bisherige Placeholder-News-Seite und Homes "Top News"-Sektion sind
+jetzt ein echter, aggregierter Feed aus drei Quellen — unabhängig vom
+Football-Mock/OpenLigaDB-Modus, da News ein eigenes, immer-echtes System
+ist.
+
+**Neue Architektur** (`lib/newsFeed/`):
+- `types/newsFeed.ts` — eigenständiges `NewsFeedItem`-Modell (id, title,
+  url, publishedAt, source, sourceType, category, teaser, imageUrl),
+  bewusst getrennt vom bisherigen `NewsItem` (das bleibt für Mock-
+  Radar/Match-Content unverändert bestehen, siehe `providers/news/`).
+- `lib/newsFeed/parsers/msvParser.ts` — der live validierte MSV-Parser,
+  verschoben von `app/debug/.../_probe/parseMsvNews.ts` an den
+  produktiven Ort. Der Debug-Probe importiert ihn jetzt von hier (eine
+  Wahrheit, keine zweite Kopie).
+- `lib/newsFeed/sources/{msv,youtube,liga3}.ts` — je ein Adapter pro
+  Quelle, jeder mit eigenem Try/Catch, jeder gibt im Fehlerfall `[]`
+  zurück statt zu werfen.
+- `lib/newsFeed/aggregate.ts` — `getAggregatedNews()`: `Promise.allSettled`
+  über alle drei Adapter, konservative Deduplizierung (exakte URL ODER
+  exakter normalisierter Titel — ähnliche Titel bleiben bewusst beide
+  erhalten), Sortierung neueste zuerst.
+- `lib/newsFeed/{fetchUtils,xmlUtils,format}.ts` — eigene, kleine
+  Hilfsfunktionen; bewusst NICHT aus `app/debug/.../_probe/` importiert,
+  damit die Produktionsschicht nie vom (jederzeit entfernbaren)
+  Debug-Modul abhängt. Nutzt Next.js' `fetch(..., { next: { revalidate: 300 } })`
+  statt eines manuellen Caches — 5 Minuten Aktualität, wie im Reality-
+  Check-Dokument empfohlen.
+
+**Eingebundene Quellen:** MSV Duisburg (offiziell, HTML/`ul.news-list`),
+ZebraTV/YouTube (Atom-Feed), liga3-online.de (RSS, exakt die zwei im
+Probe getesteten Kandidaten-URLs). RevierSport bewusst **nicht**
+eingebunden (HTTP 403 im Live-Test).
+
+**Neue UI:** `components/news/NewsFeedCard.tsx` (zwei Layouts: `row` für
+Home, `list` für die News-Seite — Quelle+Icon, optionale Kategorie,
+Titel, optionaler Teaser, Zeit; kein Bild-Platzhalter, wenn keine
+`imageUrl` vorhanden), `components/news/NewsFeedRow.tsx` (horizontale
+Reihe für Home). `app/news/page.tsx` ist jetzt der vollständige Feed
+(leerer Zustand nur, wenn wirklich alle Quellen 0 Items liefern — keine
+HTTP-Codes/Parser-Details in der normalen App, die stehen ausschließlich
+unter `/debug/content-sources`).
+
+**Fehlerbehandlung:** dreifach abgesichert — jeder Source-Adapter fängt
+eigene Fehler ab (`[]` statt Exception), `Promise.allSettled` fängt auch
+unerwartete Rejections ab, und die UI blendet leere Sections einfach aus
+(Home) bzw. zeigt einen freundlichen Text (News-Seite) statt eines
+technischen Fehlers.
+
+**Unverändert:** `types/news.ts`, `mock/news.ts`,
+`components/news/{NewsCard,TopNews}.tsx`, `providers/news/*`,
+alle Football-/OpenLigaDB-Dateien, Match Center, 3.-Liga-Seite, Bottom
+Navigation. Die alten News-Komponenten werden aktuell von nichts mehr
+aufgerufen, bleiben aber unangetastet im Projekt (kein Löschen
+funktionierender Dateien ohne expliziten Auftrag).
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
