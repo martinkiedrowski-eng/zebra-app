@@ -1,5 +1,4 @@
 import { MSV_TEAM_ID } from "@/lib/constants";
-import { OldbTeam } from "@/types/openligadb";
 
 /**
  * OpenLigaDB-TeamIds sind numerisch und provider-spezifisch. Nur der MSV
@@ -11,25 +10,26 @@ import { OldbTeam } from "@/types/openligadb";
  * WICHTIG (ehrlich dokumentierter Kompromiss): Die exakte numerische
  * OpenLigaDB-TeamId für den MSV konnte in dieser Umgebung nicht live
  * verifiziert werden (kein Netzwerkzugriff aus der Entwicklungssandbox
- * heraus, siehe Reality-Check-Dokument). Eine geratene Zahl hier fest zu
- * verdrahten wäre genau die Art von "erfundener Daten-Faktenlage", die
- * ausdrücklich vermieden werden soll. Stattdessen wird der MSV robust über
- * den Vereinsnamen erkannt — das funktioniert unabhängig von der
- * tatsächlichen numerischen ID und lässt sich jederzeit gegen
- * `getavailableteams/bl3/<season>` verifizieren, sobald echter
- * Netzwerkzugriff besteht. Danach kann optional zusätzlich/stattdessen auf
- * eine feste ID umgestellt werden.
+ * heraus, siehe Reality-Check- und Debug-Dokument). Eine geratene Zahl
+ * hier fest zu verdrahten wäre genau die Art von "erfundener
+ * Daten-Faktenlage", die ausdrücklich vermieden werden soll. Stattdessen
+ * wird der MSV robust über den Vereinsnamen erkannt.
+ *
+ * Nimmt bewusst nur primitive Strings entgegen (keinen typisierten
+ * OldbTeam mehr) — die gesamte Mapping-Schicht arbeitet seit dem
+ * Production-Debug defensiv auf `unknown`, siehe safe.ts/mapMatch.ts.
  */
 const MSV_NAME_PATTERN = /msv\s*duisburg|^msv$/i;
 
-function isMsvTeam(team: Pick<OldbTeam, "TeamName" | "ShortName">): boolean {
-  return MSV_NAME_PATTERN.test(team.TeamName) || (!!team.ShortName && MSV_NAME_PATTERN.test(team.ShortName));
+function isMsvTeam(name: string, shortName: string): boolean {
+  return MSV_NAME_PATTERN.test(name) || MSV_NAME_PATTERN.test(shortName);
 }
 
-export function normalizeTeamId(team: Pick<OldbTeam, "TeamId" | "TeamName" | "ShortName">): string {
-  return isMsvTeam(team) ? MSV_TEAM_ID : `olb-${team.TeamId}`;
-}
-
-export function isMsvOldbTeam(team: Pick<OldbTeam, "TeamName" | "ShortName">): boolean {
-  return isMsvTeam(team);
+export function normalizeTeamIdRaw(
+  rawTeamId: number,
+  teamName: string,
+  shortName: string
+): { teamId: string; isMsv: boolean } {
+  const isMsv = isMsvTeam(teamName, shortName);
+  return { teamId: isMsv ? MSV_TEAM_ID : `olb-${rawTeamId}`, isMsv };
 }

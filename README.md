@@ -172,6 +172,62 @@ statt eigene, potenziell abweichende Werte zu pflegen.
 
 **Dev-Umschalter (Next-Up/Live, Preview/Live/Report, Normal/Multiplex) existieren nur noch im Mock-Modus** (`isMockMode`-Prop durchgereicht von jeder Route) — im echten Modus bestimmt der reale `match.status` bzw. die reale aktuelle Tabelle den Zustand automatisch.
 
+## Production-Debug (Phase 3F): defensives Mapping
+
+Der erste echte Vercel-Deploy zeigte leere Teamnamen und `NaN` in der
+Tabelle. Ursache (mit Vorbehalt — siehe unten): Die Mapping-Schicht hat
+bis dahin blind einer einzigen, nie live verifizierten Feldbenennung
+vertraut (`t.TeamName`, `t.Goals`, `t.OpponentGoals`, …). Sobald ein
+einziges dieser Felder in der echten Response anders benannt war, wurde
+`undefined` durchgereicht — Namen blieben leer, `goalsFor - goalsAgainst`
+ergab `NaN`.
+
+**Fix-Strategie:** Die gesamte OpenLigaDB-Mapping-Schicht arbeitet jetzt
+auf `unknown` statt auf den (unverifizierten) `Oldb*`-Typen:
+
+- `providers/football/openligadb/safe.ts` — `pickString`/`pickNumber`/
+  `pickBoolean`/`pickArray` probieren mehrere plausible Feldnamen-
+  Kandidaten (PascalCase, camelCase, ein paar plausible Alternativnamen)
+  und fallen kontrolliert auf einen sicheren Default zurück (0, "", []) —
+  nie auf `NaN` oder leere Strings ohne Fallback-Text.
+- `warnUnexpectedShape()` loggt einmalig pro Kontext die tatsächlichen
+  Objekt-Keys nach `console.error`, wenn kein Kandidat passt — die
+  Vercel-Function-Logs zeigen damit beim nächsten echten Aufruf die realen
+  Feldnamen, ohne weiter raten zu müssen.
+- `providers/football/openligadb/mapTable.ts` (neu) und `mapMatch.ts`
+  (überarbeitet) nutzen ausschließlich diese defensiven Helfer.
+- `client.ts` liefert jetzt `unknown[]`/`unknown` statt typisierter
+  Antworten — die Typsicherheit wird bewusst an der Mapping-Grenze
+  hergestellt, nicht durch Vertrauen in die Response.
+- `types/openligadb.ts` bleibt als Dokumentation der ursprünglichen
+  Annahme stehen, wird aber von keinem Mapper mehr importiert.
+
+**Ehrlicher Vorbehalt:** Ich hatte in dieser Umgebung weiterhin **keinen
+Netzwerkzugriff** auf OpenLigaDB (`curl` wird von der Sandbox-Firewall
+geblockt, `web_fetch` liefert für die JSON-Endpunkte keine Rohdaten). Ich
+konnte die defensive Mapping-Schicht daher nicht gegen eine echte Response
+verifizieren — nur robuster gegen mehrere plausible Varianten machen. Die
+eigentliche Ursache (welches Feld genau anders hieß) bleibt unbestätigt,
+bis die Vercel-Logs nach dem nächsten Deploy die tatsächlichen Keys
+zeigen. Bitte nach dem Deploy einmal in die Function-Logs schauen — jede
+dort auftauchende `[ZEBRA/OpenLigaDB] Unerwartete Datenstruktur…`-Zeile
+verrät die echten Feldnamen und macht eine gezielte Nachschärfung möglich.
+
+**Erhaltene Pflicht-Fixes:**
+- `components/liga/LeagueTable.tsx`: `entries[i - 1]?.zone`
+- `providers/football/openligadb/mapMatch.ts`, Funktion `currentScore()`:
+  `if (last) return { home: last.scoreTeam1, away: last.scoreTeam2 };`
+
+**Build-Check:** `npm run build` konnte in dieser Sandbox nicht ausgeführt
+werden (kein Netzwerkzugriff für `npm install`, `next`/`react`-Pakete
+liegen nicht lokal vor — dieselbe Einschränkung wie zuvor). Ersatzweise
+lief ein `tsc --noEmit`-Check mit `strict` + `noUncheckedIndexedAccess`
+gegen alle geänderten `provider`/`lib`/`types`/`config`-Dateien sowie
+grob gegen alle Komponenten — keine echten Fehler außerhalb der erwarteten
+"Modul nicht gefunden"-Meldungen (fehlende `node_modules` hier). Ein
+echter `npm run build` vor dem nächsten Vercel-Push wird trotzdem
+empfohlen.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

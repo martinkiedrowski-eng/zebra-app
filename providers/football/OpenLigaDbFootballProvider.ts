@@ -4,70 +4,73 @@ import { TableEntry, FormMatch } from "@/types/table";
 import { MatchAvailability } from "@/types/matchCenter";
 import { FOOTBALL_CONFIG } from "@/config/football";
 import { fetchMatchday, fetchTable, fetchCurrentGroupOrderId, fetchMatchById } from "./openligadb/client";
-import { mapOldbMatch } from "./openligadb/mapMatch";
-import { normalizeTeamId } from "./openligadb/teamIdMap";
+import { mapOldbMatch, extractTeam } from "./openligadb/mapMatch";
+import { mapOldbTableEntry } from "./openligadb/mapTable";
 import { computeTableFromMatches, TeamSeed } from "@/lib/tableEngine";
 import { MSV_TEAM_ID } from "@/lib/constants";
-import { OldbMatch } from "@/types/openligadb";
+import { isRawObject } from "./openligadb/safe";
 
 /**
  * Echte Datenstufe. Implementiert exakt dasselbe Interface wie
  * MockFootballProvider — kein UI-Code unterscheidet, welcher Provider
  * gerade aktiv ist (siehe providers/registry.ts).
  *
+ * Arbeitet durchgängig defensiv: fetchMatchday()/fetchTable() liefern
+ * `unknown[]`, jedes einzelne Element geht durch mapOldbMatch()/
+ * mapOldbTableEntry() (siehe providers/football/openligadb/{mapMatch,
+ * mapTable}.ts), die mehrere plausible Feldnamen probieren und nie NaN
+ * oder leere Pflichtfelder ohne Fallback durchlassen — siehe
+ * providers/football/openligadb/safe.ts.
+ *
  * Methoden, die OpenLigaDB fachlich nicht sinnvoll füllen kann (z.B.
  * Personallage), geben bewusst leere/neutrale Werte zurück statt
  * erfundener Inhalte — siehe getMatchAvailability().
  */
 export class OpenLigaDbFootballProvider implements FootballDataProvider {
-  private async seasonMatches(): Promise<OldbMatch[]> {
+  private async seasonMatchesRaw(): Promise<unknown[]> {
     return fetchMatchday(); // kein group-Parameter -> ganze Saison
   }
 
-  private teamRefsFromMatches(rawMatches: OldbMatch[]): Map<string, TeamRef> {
+  private async seasonMatches(): Promise<Match[]> {
+    const raw = await this.seasonMatchesRaw();
+    return raw.map(mapOldbMatch);
+  }
+
+  private teamRefsFromRawMatches(rawMatches: unknown[]): Map<string, TeamRef> {
     const teams = new Map<string, TeamRef>();
-    for (const m of rawMatches) {
-      for (const t of [m.Team1, m.Team2]) {
-        const id = normalizeTeamId(t);
-        if (!teams.has(id)) {
-          teams.set(id, {
-            id,
-            name: t.TeamName,
-            shortName: t.ShortName || t.TeamName,
-            crestUrl: t.TeamIconUrl ?? undefined,
-          });
-        }
+    for (const raw of rawMatches) {
+      if (!isRawObject(raw)) continue;
+      for (const key of ["Team1", "team1", "Team2", "team2"]) {
+        if (!(key in raw)) continue;
+        const ref = extractTeam(raw[key], key.toLowerCase().includes("1") ? "Heim" : "Auswärts");
+        if (!teams.has(ref.id)) teams.set(ref.id, ref);
       }
     }
     return teams;
   }
 
   async getNextMatch(): Promise<Match | null> {
-    const raw = await this.seasonMatches();
+    const matches = await this.seasonMatches();
     const now = Date.now();
-    const upcoming = raw
-      .filter((m) => !m.MatchIsFinished && new Date(m.MatchDateTimeUTC).getTime() > now)
-      .filter((m) => normalizeTeamId(m.Team1) === MSV_TEAM_ID || normalizeTeamId(m.Team2) === MSV_TEAM_ID)
-      .sort((a, b) => new Date(a.MatchDateTimeUTC).getTime() - new Date(b.MatchDateTimeUTC).getTime());
-    return upcoming[0] ? mapOldbMatch(upcoming[0]) : null;
+    const upcoming = matches
+      .filter((m) => m.status === "scheduled" && new Date(m.kickoff).getTime() > now)
+      .filter((m) => m.isMsvMatch)
+      .sort((a, b) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime());
+    return upcoming[0] ?? null;
   }
 
   async getLastMatch(): Promise<Match | null> {
-    const raw = await this.seasonMatches();
-    const finished = raw
-      .filter((m) => m.MatchIsFinished)
-      .filter((m) => normalizeTeamId(m.Team1) === MSV_TEAM_ID || normalizeTeamId(m.Team2) === MSV_TEAM_ID)
-      .sort((a, b) => new Date(b.MatchDateTimeUTC).getTime() - new Date(a.MatchDateTimeUTC).getTime());
-    return finished[0] ? mapOldbMatch(finished[0]) : null;
+    const matches = await this.seasonMatches();
+    const finished = matches
+      .filter((m) => m.status === "finished" && m.isMsvMatch)
+      .sort((a, b) => new Date(b.kickoff).getTime() - new Date(a.kickoff).getTime());
+    return finished[0] ?? null;
   }
 
   async getLiveMatch(): Promise<Match | null> {
-    const raw = await this.seasonMatches();
-    const now = Date.now();
-    const live = raw
-      .filter((m) => !m.MatchIsFinished && new Date(m.MatchDateTimeUTC).getTime() <= now)
-      .filter((m) => normalizeTeamId(m.Team1) === MSV_TEAM_ID || normalizeTeamId(m.Team2) === MSV_TEAM_ID);
-    return live[0] ? mapOldbMatch(live[0]) : null;
+    const matches = await this.seasonMatches();
+    const live = matches.filter((m) => (m.status === "live" || m.status === "halftime") && m.isMsvMatch);
+    return live[0] ?? null;
   }
 
   async getMsvForm(count: number): Promise<FormMatch[]> {
@@ -75,28 +78,29 @@ export class OpenLigaDbFootballProvider implements FootballDataProvider {
   }
 
   async getTeamForm(teamId: string, count: number): Promise<FormMatch[]> {
-    const raw = await this.seasonMatches();
-    const finished = raw
-      .filter((m) => m.MatchIsFinished)
-      .filter((m) => normalizeTeamId(m.Team1) === teamId || normalizeTeamId(m.Team2) === teamId)
-      .sort((a, b) => new Date(b.MatchDateTimeUTC).getTime() - new Date(a.MatchDateTimeUTC).getTime())
+    const matches = await this.seasonMatches();
+    const finished = matches
+      .filter((m) => m.status === "finished")
+      .filter((m) => m.homeTeam.id === teamId || m.awayTeam.id === teamId)
+      .sort((a, b) => new Date(b.kickoff).getTime() - new Date(a.kickoff).getTime())
       .slice(0, count);
 
-    return finished.map((m) => {
-      const match = mapOldbMatch(m);
-      const isHome = match.homeTeam.id === teamId;
-      const own = isHome ? match.homeScore ?? 0 : match.awayScore ?? 0;
-      const opp = isHome ? match.awayScore ?? 0 : match.homeScore ?? 0;
-      const result = own > opp ? "win" : own < opp ? "loss" : "draw";
-      const opponent = isHome ? match.awayTeam : match.homeTeam;
-      return {
-        matchId: match.id,
-        opponentShortName: opponent.shortName,
-        result,
-        scoreLabel: `${own}:${opp}`,
-        home: isHome,
-      } satisfies FormMatch;
-    });
+    return finished
+      .filter((m) => m.homeScore !== null && m.awayScore !== null)
+      .map((match) => {
+        const isHome = match.homeTeam.id === teamId;
+        const own = (isHome ? match.homeScore : match.awayScore) ?? 0;
+        const opp = (isHome ? match.awayScore : match.homeScore) ?? 0;
+        const result = own > opp ? "win" : own < opp ? "loss" : "draw";
+        const opponent = isHome ? match.awayTeam : match.homeTeam;
+        return {
+          matchId: match.id,
+          opponentShortName: opponent.shortName,
+          result,
+          scoreLabel: `${own}:${opp}`,
+          home: isHome,
+        } satisfies FormMatch;
+      });
   }
 
   async getTableExcerpt(rangeAroundMsv: number): Promise<TableEntry[]> {
@@ -109,7 +113,8 @@ export class OpenLigaDbFootballProvider implements FootballDataProvider {
   async getMatchById(matchId: string): Promise<Match | null> {
     try {
       const raw = await fetchMatchById(matchId);
-      return mapOldbMatch(raw);
+      const match = mapOldbMatch(raw);
+      return match.id === "unknown" ? null : match;
     } catch {
       return null;
     }
@@ -129,46 +134,29 @@ export class OpenLigaDbFootballProvider implements FootballDataProvider {
 
   async getTable(): Promise<TableEntry[]> {
     const raw = await fetchTable();
-    return raw.map((t, i) => ({
-      position: i + 1,
-      teamId: normalizeTeamId({ TeamId: t.TeamInfoId, TeamName: t.TeamName, ShortName: t.ShortName }),
-      teamName: t.TeamName,
-      teamShortName: t.ShortName || t.TeamName,
-      played: t.Matches,
-      wins: t.Won,
-      draws: t.Draw,
-      losses: t.Lost,
-      goalsFor: t.Goals,
-      goalsAgainst: t.OpponentGoals,
-      points: t.Points,
-      isMsv: normalizeTeamId({ TeamId: t.TeamInfoId, TeamName: t.TeamName, ShortName: t.ShortName }) === MSV_TEAM_ID,
-    }));
+    return raw.map((entry, i) => mapOldbTableEntry(entry, i + 1));
   }
 
   async getCurrentMatchday(): Promise<MatchdayResult> {
-    const [currentGroup, seasonRaw] = await Promise.all([fetchCurrentGroupOrderId(), this.seasonMatches()]);
-
-    const currentMatchesRaw = seasonRaw.filter((m) => m.Group.GroupOrderID === currentGroup);
-    const matches = currentMatchesRaw.map(mapOldbMatch);
-
+    const [currentGroup, seasonRaw] = await Promise.all([fetchCurrentGroupOrderId(), this.seasonMatchesRaw()]);
+    const matches = seasonRaw.map(mapOldbMatch).filter((m) => m.matchday === currentGroup);
     return { matchday: currentGroup, matches };
   }
 
   /**
    * WICHTIG: Diese Tabelle ist die Basis für computeLiveTable() und darf
    * die Ergebnisse des aktuellen Spieltags NICHT bereits enthalten — sonst
-   * würden sie doppelt gezählt (siehe Aufgabenstellung Punkt 3). OpenLigaDB
-   * liefert nur "die aktuelle Tabelle" (inkl. laufendem Spieltag) oder rohe
-   * Spieldaten — deshalb wird die Baseline hier bewusst NICHT aus
-   * getTable() abgeleitet, sondern aus allen Spielen VOR dem aktuellen
-   * Spieltag mit computeTableFromMatches() rekonstruiert.
+   * würden sie doppelt gezählt. OpenLigaDB liefert nur "die aktuelle
+   * Tabelle" (inkl. laufendem Spieltag) oder rohe Spieldaten — deshalb
+   * wird die Baseline hier bewusst NICHT aus getTable() abgeleitet,
+   * sondern aus allen Spielen VOR dem aktuellen Spieltag mit
+   * computeTableFromMatches() rekonstruiert.
    */
   async getBaselineTable(): Promise<TableEntry[]> {
-    const [currentGroup, seasonRaw] = await Promise.all([fetchCurrentGroupOrderId(), this.seasonMatches()]);
+    const [currentGroup, seasonRaw] = await Promise.all([fetchCurrentGroupOrderId(), this.seasonMatchesRaw()]);
 
-    const priorMatchesRaw = seasonRaw.filter((m) => m.Group.GroupOrderID < currentGroup);
-    const priorMatches = priorMatchesRaw.map(mapOldbMatch);
-    const teamRefs = Array.from(this.teamRefsFromMatches(seasonRaw).values());
+    const priorMatches = seasonRaw.map(mapOldbMatch).filter((m) => m.matchday < currentGroup);
+    const teamRefs = Array.from(this.teamRefsFromRawMatches(seasonRaw).values());
 
     const seeds: TeamSeed[] = teamRefs.map((t) => ({
       teamId: t.id,

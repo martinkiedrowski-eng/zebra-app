@@ -1,9 +1,14 @@
 /**
- * Diese Typen bilden EXAKT die JSON-Struktur von OpenLigaDB ab (PascalCase
- * wie von der API geliefert). Sie dürfen ausschließlich innerhalb von
- * providers/football/openligadb/* verwendet werden — sobald ein Wert die
- * Provider-Schicht verlässt, ist er auf unsere internen Types (types/*)
- * gemappt. Keine Komponente und keine Route darf diese Typen importieren.
+ * HINWEIS (nach Production-Debug): Diese Datei bildete die ursprünglich
+ * ANGENOMMENE (dokumentationsbasierte, nie live verifizierte) JSON-Struktur
+ * von OpenLigaDB ab. Der erste Production-Deploy zeigte leere Teamnamen
+ * und NaN-Werte — vermutlich weil diese Annahme an mindestens einer Stelle
+ * nicht zur echten Response passte. Die Mapping-Schicht
+ * (providers/football/openligadb/{mapMatch,mapTable,safe}.ts) verlässt
+ * sich seitdem NICHT mehr auf diese festen Typen, sondern liest Felder
+ * defensiv über mehrere plausible Namens-Kandidaten aus `unknown`-Werten
+ * aus. Diese Datei wird von keinem Mapper mehr importiert — sie bleibt nur
+ * als Referenz/Dokumentation der ursprünglichen Annahme stehen.
  */
 
 export interface OldbTeam {
