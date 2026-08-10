@@ -465,6 +465,29 @@ Keine neuen Farben, keine neue Bild-Fetch-Logik, keine neuen UI-Elemente.
 `NewsFeedRow.tsx` unverändert (setzt selbst keine feste Breite, die Card
 bestimmt sie jetzt).
 
+## Matchday Reality Check + Debug-Probe (Phase 3M)
+
+Neue, isolierte Debug-Route `/debug/matchday` (analog zu
+`/debug/content-sources`: `noindex`, `force-dynamic`, keine Verlinkung in
+der Bottom Navigation). Zeigt nebeneinander:
+
+- **rohe** OpenLigaDB-Feldnamen der ersten drei Spiele des aktuellen
+  Spieltags (Top-Level-Keys, `Team1`/`team1`-Keys, `Group`/`group`-Keys,
+  erstes `Goals`-Objekt-Keys, `matchIsFinished`-Rohwert) — beantwortet die
+  PascalCase-vs-camelCase-Frage empirisch statt durch Vermutung
+- `getlastchangedate` im Klartext
+- die **normalisierten** Werte über den unveränderten
+  `footballDataProvider.getCurrentMatchday()`
+- die daraus berechnete **Live-Tabelle** und den **MSV-Kontextsatz** über
+  die unveränderten `lib/tableEngine.ts`/`lib/leagueContext.ts`-Funktionen
+
+Ruft ausschließlich lesend auf: ein eigener, redundanter Roh-Fetch (nicht
+aus `providers/football/openligadb/client.ts` importiert, um den Provider
+nicht anzufassen) plus die bestehenden, unveränderten Provider-/
+Engine-Funktionen. Keine neue Produktionslogik, keine bestehende Seite
+verändert. Siehe `ZEBRA-Matchday-Reality-Check.md` für den vollständigen
+Befund.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
