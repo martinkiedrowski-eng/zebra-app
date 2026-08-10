@@ -139,7 +139,7 @@ export function HomeView({
 
         {topNews.length > 0 && (
           <section className="mb-6">
-            <SectionHeader title="Top News" actionLabel="Alle" actionHref="/news" muted={!!showLive} />
+            <SectionHeader title="News" actionLabel="Alle" actionHref="/news" muted={!!showLive} />
             <NewsFeedRow items={topNews} />
           </section>
         )}

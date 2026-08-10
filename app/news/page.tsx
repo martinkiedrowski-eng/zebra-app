@@ -13,7 +13,7 @@ export default async function NewsPage() {
 
   return (
     <AppShell>
-      <header className="mb-6">
+      <header className="mb-4">
         <p className="font-text text-xs uppercase tracking-wide text-zebra-mute">ZEBRA</p>
         <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-zebra-ice">News</h1>
       </header>
@@ -25,7 +25,7 @@ export default async function NewsPage() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5">
           {items.map((item) => (
             <NewsFeedCard key={item.id} item={item} variant="list" />
           ))}

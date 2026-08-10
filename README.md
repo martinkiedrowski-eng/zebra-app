@@ -441,6 +441,30 @@ Navigation. Die alten News-Komponenten werden aktuell von nichts mehr
 aufgerufen, bleiben aber unangetastet im Projekt (kein Löschen
 funktionierender Dateien ohne expliziten Auftrag).
 
+## News-Polish-Pass (Phase 3L)
+
+Reiner UI-Polish, keine Änderung an `lib/newsFeed/` (Adapter, Aggregator,
+Parser, Dedup, Fehlerbehandlung) und keine Änderung an Football/
+OpenLigaDB/Match Center/Tabelle/BottomNav/Debug-Probe.
+
+- `components/home/HomeView.tsx`: Section-Titel "Top News" → "News".
+- `components/news/NewsFeedCard.tsx`: `row`-Variante (Home) komplett neu
+  layoutet — kompaktes Zeilen-Layout mit optionalem 56×56-Thumbnail
+  links (nur falls `item.imageUrl` bereits vorhanden ist, nichts wird neu
+  geladen/konstruiert), Kategorie-Pille entfernt (weniger textlastig),
+  Headline auf `line-clamp-2` begrenzt, Card-Breite `w-56`. `list`-
+  Variante (News-Seite) unverändert im Aufbau, Headline zusätzlich auf
+  `line-clamp-3` begrenzt, damit ein einzelner sehr langer Titel die Karte
+  nicht sprengt.
+- `app/news/page.tsx`: Header-Abstand an das übrige App-Muster angeglichen
+  (`mb-4` statt `mb-6`, wie Match Center/3. Liga), Card-Abstände leicht
+  verdichtet (`gap-2.5` statt `gap-3`) für einen kompakteren
+  Sport-Newsstream-Charakter.
+
+Keine neuen Farben, keine neue Bild-Fetch-Logik, keine neuen UI-Elemente.
+`NewsFeedRow.tsx` unverändert (setzt selbst keine feste Breite, die Card
+bestimmt sie jetzt).
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
