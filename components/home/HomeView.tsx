@@ -126,7 +126,7 @@ export function HomeView({
 
         <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <SectionHeader title="Tabelle" actionLabel="Alle" muted={!!showLive} />
+            <SectionHeader title="Tabelle" actionLabel="Alle" actionHref="/3-liga" muted={!!showLive} />
             <TableExcerpt entries={table} />
           </div>
           <div>

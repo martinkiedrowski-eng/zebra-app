@@ -228,6 +228,35 @@ grob gegen alle Komponenten — keine echten Fehler außerhalb der erwarteten
 echter `npm run build` vor dem nächsten Vercel-Push wird trotzdem
 empfohlen.
 
+## Home-Tabellenausschnitt korrigiert (Phase 3G)
+
+Bug: Bei MSV auf Platz 4 zeigte die Home-Tabelle Plätze 2–6 (starres
+±2-Fenster um den MSV) — die Tabellenspitze fehlte.
+
+**Geändert, ausschließlich UI-seitig — keine Provider-/Mapping-Änderung:**
+- `lib/homeTableExcerpt.ts` (neu) — reines Auswahl-Utility, verändert nie
+  `position`-Werte, nur ein Slice der bereits fertig sortierten Tabelle.
+- `app/page.tsx` — lädt jetzt die volle Tabelle über das unveränderte
+  `getTable()` und wendet `selectHomeTableExcerpt()` lokal an, statt
+  `getTableExcerpt(2)` zu rufen.
+- `components/ui/SectionHeader.tsx` — optionaler `actionHref`-Prop, damit
+  "Alle" bei der Tabelle tatsächlich zu `/3-liga` verlinkt (vorher ein
+  wirkungsloser Button ohne `onAction`).
+- `components/home/HomeView.tsx` — übergibt `actionHref="/3-liga"`.
+
+**Logik:** Steht das Zielteam innerhalb der ersten 5 Plätze, zeigt die
+Vorschau Platz 1–5. Sonst ein auf das Team zentriertes 5er-Fenster, das am
+Tabellenende so weit nach oben verschoben wird, dass trotzdem 5 Einträge
+sichtbar sind. Fehlt das Team in der Tabelle, wird die Spitze gezeigt. Hat
+die Tabelle insgesamt weniger als 5 Einträge, wird sie komplett gezeigt.
+
+**Nicht betroffen:** `FootballDataProvider`, `MockFootballProvider`,
+`OpenLigaDbFootballProvider`, alle OpenLigaDB-Mapper, alle Mock-Daten. Die
+Interface-Methode `getTableExcerpt()` bleibt unverändert bestehen (wird
+von Home nicht mehr aufgerufen, aber nicht entfernt — kein Provider-Umbau).
+3.-Liga-Seite und Match Center sind unverändert, da sie bereits die volle
+Tabelle bzw. `getTeamTableEntry()` nutzen.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
