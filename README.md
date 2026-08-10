@@ -257,6 +257,37 @@ von Home nicht mehr aufgerufen, aber nicht entfernt — kein Provider-Umbau).
 3.-Liga-Seite und Match Center sind unverändert, da sie bereits die volle
 Tabelle bzw. `getTeamTableEntry()` nutzen.
 
+## Temporärer Content Source Probe (Phase 3H, vor News Hub v1)
+
+Route `/debug/content-sources` (nicht in der Bottom Navigation verlinkt,
+`noindex`) testet serverseitig, ob die vier im Content-Reality-Check
+identifizierten Quellen tatsächlich erreichbar sind und was sie real
+liefern — **keine erfundenen Feed-Felder**, nur was ankommt.
+
+- **YouTube/ZebraTV:** ruft den offiziellen Atom-Feed für Channel-ID
+  `UCY18b48CEK53zTARqNiN0ig` ab.
+- **liga3-online.de:** testet beide plausiblen WordPress-Kategorie-Feed-
+  URLs, setzt keine als sicher voraus.
+- **RevierSport:** sucht zuerst den echten Feed-Link auf der MSV-
+  Teamseite (`<link rel=alternate>` oder sichtbarer RSS-Anchor) und testet
+  erst danach den gefundenen Feed — keine geratene URL.
+- **msv-duisburg.de:** ruft `robots.txt` ab (gefiltert auf
+  User-agent/Disallow/Allow/Sitemap-Zeilen), prüft die drei bekannten
+  Kategorie-IDs (15/11/5) gegen die aktuelle Seite und extrahiert
+  heuristisch bis zu drei Artikel-Teaser samt `ZebraTalente`-Präfix-Check.
+
+Alles unter `app/debug/content-sources/` (inkl. privatem `_probe/`-
+Unterordner, der von Next.js nicht geroutet wird) — **vollständig isoliert**,
+keine bestehende Datei wurde dafür verändert. Löschen des gesamten Ordners
+`app/debug/` entfernt den Probe rückstandsfrei.
+
+Kein neues npm-Paket: bewusst ein minimaler, regelbasierter
+XML/HTML-Ausschnitt-Parser statt eines echten Parsers, weil dieser Code
+komplett wieder entfernt wird. Alle Netz-Zugriffe mit 8s-Timeout,
+`cache: "no-store"`, keine Secrets/Env-Variablen in der Ausgabe, keine
+vollständigen HTML/XML-Dokumente geloggt (nur einzelne Feldwerte,
+Teaser auf 300 Zeichen gekürzt).
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
