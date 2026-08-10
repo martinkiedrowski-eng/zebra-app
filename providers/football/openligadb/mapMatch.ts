@@ -19,8 +19,10 @@ function currentScore(match: OldbMatch): { home: number | null; away: number | n
 
   if (match.Goals.length > 0) {
     const last = match.Goals[match.Goals.length - 1];
+    if (last) {
     return { home: last.ScoreTeam1, away: last.ScoreTeam2 };
   }
+ }
 
   const halftime = match.MatchResults.find((r) => r.ResultTypeID === RESULT_TYPE_HALFTIME);
   if (halftime) return { home: halftime.PointsTeam1, away: halftime.PointsTeam2 };
