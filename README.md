@@ -656,6 +656,36 @@ OpenLigaDB-Mappings, alle Debug-Probes außer dem neuen
 `/debug/competitions`, Mehr-/ZebraTV-/Datenquellen-/Über-ZEBRA-Seite,
 globale Styles.
 
+## Kleiner gezielter Pass (Phase 4D)
+
+**1) „1902" präsenter:** Größe `text-xs`→`text-base` (12px→16px, ca. +33 %),
+Gewicht `font-semibold`→`font-bold`, `leading-none` ergänzt (Header wird
+dadurch nicht höher), Tracking minimal von `0.2em` auf `0.18em`
+angepasst, Position/Farbe (`text-zebra-blue`) unverändert. Bleibt klar
+kleiner als „MSV DUISBURG" (`text-2xl`).
+
+**2) DFB-Pokal — Probe erweitert, NICHT integriert:** Ich habe die
+tatsächliche Ergebnisliste aus eurem Vercel-Test nicht vor mir (nur die
+Bestätigung „zahlreiche Treffer"), und die Vorgabe war ausdrücklich: kein
+Shortcut/keine Season raten. `/debug/competitions`
+(`app/debug/competitions/page.tsx`) prüft deshalb jetzt automatisch die
+wahrscheinlichsten Kandidaten (Saison-Feld enthält „2026", sonst die
+ersten aus der Liste, hart auf 6 Requests gedeckelt) — jeweils mit
+**deren eigenem, echtem** Shortcut/Season aus der realen
+`getavailableleagues`-Response — und sucht darin gezielt nach
+„MSV"/"Duisburg". Ergebnis wird pro Kandidat angezeigt: Name, Shortcut,
+Season, LeagueId, Gesamtzahl Spiele, und bei Treffer: MatchID, Gegner,
+Kickoff, Runde. **Keine Integration in `/spiele`, keine neuen
+Provider-Methoden, keine Änderung an `tableEngine.ts`/`leagueContext.ts`/
+`multiplex.ts`/`/3-liga`** — das folgt erst nach dem nächsten
+Vercel-Test, wenn die Kandidaten-Liste eindeutig ist. Niederrheinpokal-
+Abschnitt unverändert stehen gelassen (nur zur Referenz), keine weitere
+Recherche dafür.
+
+**Unverändert:** alles außerhalb dieser zwei Dateien — insbesondere News/
+News-Parser/Encoding-Fix, ZebraTV, Mehr, BottomNav, Matchday-Debug,
+Designsystem, `/spiele`-Logik, `/3-liga`.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

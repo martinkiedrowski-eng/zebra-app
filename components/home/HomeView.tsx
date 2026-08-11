@@ -56,7 +56,9 @@ export function HomeView({
         </div>
         <div className="flex flex-col items-end gap-1.5">
           {/* Rein typografisches Brand-Detail, kein Logo/Wappen. */}
-          <span className="font-display text-xs font-semibold tracking-[0.2em] text-zebra-blue">1902</span>
+          <span className="font-display text-base font-bold leading-none tracking-[0.18em] text-zebra-blue">
+            1902
+          </span>
           {isDemoData && (
             <span className="rounded-pill border border-zebra-border px-2.5 py-1 font-text text-[10px] font-medium uppercase tracking-wide text-zebra-mute-2">
               Demo-Daten
