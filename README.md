@@ -766,6 +766,27 @@ statt „Match Center+" — Aufstellungen/xG bleiben ohne kostenpflichtigen
 Anbieter nicht umsetzbar. Keine neue produktive UI, kein neuer Provider,
 keine bestehende Logik verändert.
 
+## MSV-Kader + Zuschauer Reality Check (Phase 4G)
+
+Reine Analyse, keine produktive Implementierung — vollständiger Befund in
+`ZEBRA-Squad-Attendance-Reality-Check.md`. Kurzfassung: **football-data.org
+und Sportmonks scheiden für die 3. Liga auf dem Gratis-Tier aus.**
+API-Football hat dokumentierte Kader-/Lineup-Endpunkte, aber **kein**
+Zuschauerfeld in der dokumentierten Fixture-Struktur gefunden, und die
+3.-Liga-Coverage für 2026/27 war ohne echten Account-Key nicht live
+bestätigbar. **TheSportsDB ist die einzige Zusatzquelle, die ohne
+persönlichen API-Key live testbar war** — dafür der neue, isolierte
+Debug-Probe `/debug/squad-attendance-sources`
+(`app/debug/squad-attendance-sources/page.tsx`, `noindex`,
+`force-dynamic`, keine Secrets), der live gegen „MSV Duisburg" sucht und
+den Kader inkl. Rückennummer/Position/Geburtsdatum/Nationalität abruft.
+Torschützen-Zuordnung zu OpenLigaDB (`goalGetterId`/`goalGetterName`,
+kein Team-Feld) nur über fehleranfälliges Namensmatching möglich — Risiken
+(Umlaute, Abkürzungen, Doppelnamen) im Bericht benannt, **kein
+automatisches Matching ohne manuelle Kontrolle empfohlen**. Keine gemeinsame
+Quelle für Kader + Zuschauer gefunden. Keine neue produktive UI, kein
+neuer Provider, keine bestehende Logik verändert.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
