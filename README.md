@@ -746,6 +746,26 @@ Liga-Mock-Spiele.
 ZebraTV, Mehr, `/debug/matchday`, `/debug/competitions` (bleibt bestehen).
 Niederrheinpokal weiterhin nicht verfolgt.
 
+## MSV Statistics Reality Check (Phase 4F)
+
+Reine Analyse, keine produktive Implementierung — vollständiger Befund in
+`ZEBRA-Stats-Reality-Check.md`. Kurzfassung: `MatchStats`/`MatchLineup`-
+Typen existieren bereits (aus der Match-Center-Phase), werden im echten
+Modus aber nie befüllt, da OpenLigaDB weder Aufstellungen noch Ballbesitz/
+Schüsse/xG/Karten liefert (konsistent über die gesamte bisherige
+Projekt-Recherche bestätigt). Zwei konkrete offene Fragen — `getgoalgetters`
+(Torschützen) und ein mögliches Zuschauerfeld (`NumberOfViewers`) — klärt
+der neue, isolierte Debug-Probe `/debug/stats-sources`
+(`app/debug/stats-sources/page.tsx`, `noindex`, `force-dynamic`, keine
+Secrets). Externe APIs geprüft: football-data.org deckt die 3. Liga auf
+dem kostenlosen Tier nicht ab, Sportmonks ebenso wenig, API-Football hat
+unbestätigte 3.-Liga-Tiefe bei nur 100 Requests/Tag im Gratis-Tier,
+TheSportsDB gilt laut Fremdquelle als nicht genau genug. Empfehlung:
+schlanke „MSV Stats v1" (Saisonbilanz, Top-Torschützen, ggf. Zuschauer)
+statt „Match Center+" — Aufstellungen/xG bleiben ohne kostenpflichtigen
+Anbieter nicht umsetzbar. Keine neue produktive UI, kein neuer Provider,
+keine bestehende Logik verändert.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
