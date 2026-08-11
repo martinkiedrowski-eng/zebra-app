@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Match } from "@/types/match";
 import { MSV_TEAM_ID } from "@/lib/constants";
 import { formatKickoffDate } from "@/lib/format";
@@ -10,6 +9,7 @@ const BADGE_STYLE = {
   N: "bg-zebra-loss text-zebra-ice",
 } as const;
 
+/** Bewusst NICHT antippbar — siehe UpcomingMatchRow.tsx für die Begründung. */
 export function ResultRow({ match }: { match: Match }) {
   const isHome = match.homeTeam.id === MSV_TEAM_ID;
   const opponent = isHome ? match.awayTeam : match.homeTeam;
@@ -17,10 +17,7 @@ export function ResultRow({ match }: { match: Match }) {
   const hasScore = match.homeScore !== null && match.awayScore !== null;
 
   return (
-    <Link
-      href={`/spiele/${match.id}`}
-      className="flex items-center gap-3 rounded-card border border-zebra-border bg-zebra-surface px-4 py-3"
-    >
+    <div className="flex items-center gap-3 rounded-card border border-zebra-border bg-zebra-surface px-4 py-3">
       <span className="w-16 flex-shrink-0 font-mono text-xs text-zebra-mute">
         {match.kickoff ? formatKickoffDate(match.kickoff) : "–"}
       </span>
@@ -40,6 +37,6 @@ export function ResultRow({ match }: { match: Match }) {
           {label}
         </span>
       )}
-    </Link>
+    </div>
   );
 }

@@ -162,6 +162,24 @@ export class OpenLigaDbFootballProvider implements FootballDataProvider {
     return { matchday: currentGroup, matches };
   }
 
+  /** Polish-Pass / Spieltagsnavigation: identisches Muster wie getCurrentMatchday(), nur mit fester Spieltagsnummer statt "aktuell". */
+  async getMatchday(matchday: number): Promise<MatchdayResult> {
+    const seasonRaw = await this.seasonMatchesRaw();
+    const matches = seasonRaw.map(mapOldbMatch).filter((m) => m.matchday === matchday);
+    return { matchday, matches };
+  }
+
+  /** Polish-Pass / Spieltagsnavigation: Grenzen aus den tatsächlich vorkommenden Spieltagsnummern der Saison ableiten — nichts geraten. */
+  async getSeasonMatchdayRange(): Promise<{ min: number; max: number }> {
+    const seasonRaw = await this.seasonMatchesRaw();
+    const matchdays = seasonRaw
+      .map(mapOldbMatch)
+      .map((m) => m.matchday)
+      .filter((n) => n > 0);
+    if (matchdays.length === 0) return { min: 1, max: 1 };
+    return { min: Math.min(...matchdays), max: Math.max(...matchdays) };
+  }
+
   /**
    * WICHTIG: Diese Tabelle ist die Basis für computeLiveTable() und darf
    * die Ergebnisse des aktuellen Spieltags NICHT bereits enthalten — sonst

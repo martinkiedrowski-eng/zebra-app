@@ -104,4 +104,17 @@ export class MockFootballProvider implements FootballDataProvider {
     // (gleiches Muster wie MOCK_LIVE_MATCH auf Home).
     return this.delay({ matchday: CURRENT_MATCHDAY, matches: MOCK_MATCHDAY_SCHEDULED });
   }
+
+  /** Mock kennt nur einen Spieltag — liefert ihn bei passender Nummer, sonst ehrlich leer statt erfunden. */
+  async getMatchday(matchday: number): Promise<MatchdayResult> {
+    if (matchday === CURRENT_MATCHDAY) {
+      return this.delay({ matchday, matches: MOCK_MATCHDAY_SCHEDULED });
+    }
+    return this.delay({ matchday, matches: [] });
+  }
+
+  /** Mock kennt nur einen Spieltag — Range kollabiert auf diesen einen Wert. */
+  async getSeasonMatchdayRange(): Promise<{ min: number; max: number }> {
+    return this.delay({ min: CURRENT_MATCHDAY, max: CURRENT_MATCHDAY });
+  }
 }

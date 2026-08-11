@@ -21,16 +21,16 @@ export async function fetchLiga3News(): Promise<NewsFeedItem[]> {
     const items: NewsFeedItem[] = [];
     for (const item of rawItems) {
       try {
-        const title = decodeEntities(extractTagText(item, "title"));
+        const title = decodeEntities(stripCdataAndTags(extractTagText(item, "title")));
         const link = extractTagText(item, "link");
         const pubDate = extractTagText(item, "pubDate");
-        const description = decodeEntities(extractTagText(item, "description"));
-        const category = decodeEntities(extractTagText(item, "category"));
+        const description = decodeEntities(stripCdataAndTags(extractTagText(item, "description")));
+        const category = decodeEntities(stripCdataAndTags(extractTagText(item, "category")));
         const mediaThumb = extractAttr(item, "media:content", "url") ?? extractAttr(item, "enclosure", "url");
 
         if (!title || !link) continue;
 
-        const teaserText = stripCdataAndTags(description);
+        const teaserText = description;
 
         items.push({
           id: `liga3:${link.trim()}`,

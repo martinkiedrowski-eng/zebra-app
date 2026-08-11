@@ -34,14 +34,54 @@ export function isLikelyXml(text: string): boolean {
   return /<rss[\s>]/i.test(head) || /<feed[\s>]/i.test(head) || head.startsWith("<?xml");
 }
 
+/**
+ * Häufige benannte HTML-Entities, die in RSS-Feeds für deutschen Text und
+ * typografische Sonderzeichen vorkommen — über die ursprünglichen 5
+ * hinaus (amp/lt/gt/quot/#39), die zuvor die einzigen abgedeckten waren.
+ * Das war die identifizierte Ursache für falsch dargestellte
+ * Sonderzeichen (Umlaute, „ ", –, …) bei liga3-online.de-Headlines: alles
+ * außerhalb dieser fünf Fälle blieb als roher Entity-Text
+ * ("D&#252;sseldorf") im Titel stehen, statt zum echten Zeichen (ü)
+ * dekodiert zu werden.
+ */
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  auml: "ä",
+  ouml: "ö",
+  uuml: "ü",
+  Auml: "Ä",
+  Ouml: "Ö",
+  Uuml: "Ü",
+  szlig: "ß",
+  nbsp: "\u00A0",
+  ndash: "–",
+  mdash: "—",
+  hellip: "…",
+  laquo: "«",
+  raquo: "»",
+  bdquo: "„",
+  ldquo: "\u201C",
+  rdquo: "\u201D",
+  lsquo: "\u2018",
+  rsquo: "\u2019",
+};
+
 export function decodeEntities(value: string | null): string | null {
   if (value === null) return null;
   return value
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'");
+    .replace(/&([a-zA-Z]+);/g, (full, name: string) => NAMED_ENTITIES[name] ?? full)
+    .replace(/&#(\d+);/g, (_full, dec: string) => {
+      const code = Number.parseInt(dec, 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : _full;
+    })
+    .replace(/&#[xX]([0-9a-fA-F]+);/g, (_full, hex: string) => {
+      const code = Number.parseInt(hex, 16);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : _full;
+    });
 }
 
 export function stripCdataAndTags(value: string | null): string | null {

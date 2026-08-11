@@ -29,6 +29,23 @@ export function pickString(obj: RawObject, keys: string[], fallback = ""): strin
   return fallback;
 }
 
+/**
+ * Für ID-Felder (z.B. MatchID), die je nach Response als JSON-Zahl ODER
+ * als String geliefert werden können. `pickString()` allein würde eine
+ * numerisch gelieferte ID fälschlich als "nicht vorhanden" behandeln
+ * (typeof-Check lässt nur echte Strings durch) — das war die identifizierte
+ * Ursache dafür, dass Match-Center-Links mit einer synthetischen
+ * Ersatz-ID statt der echten OpenLigaDB-ID gebaut wurden.
+ */
+export function pickIdAsString(obj: RawObject, keys: string[], fallback = ""): string {
+  for (const key of keys) {
+    const value = obj[key];
+    if (typeof value === "string" && value.trim() !== "") return value;
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return fallback;
+}
+
 export function pickNumber(obj: RawObject, keys: string[], fallback = 0): number {
   for (const key of keys) {
     const value = obj[key];

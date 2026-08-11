@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Home, Newspaper, CalendarDays, ListOrdered, Menu } from "lucide-react";
 
 const ITEMS = [
-  { href: "/", label: "Heute", icon: Home },
+  { href: "/", label: "Home", icon: Home },
   { href: "/news", label: "News", icon: Newspaper },
   { href: "/spiele", label: "Spiele", icon: CalendarDays },
   { href: "/3-liga", label: "3. Liga", icon: ListOrdered },

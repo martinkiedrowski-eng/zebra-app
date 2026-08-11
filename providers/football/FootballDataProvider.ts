@@ -51,4 +51,12 @@ export interface FootballDataProvider {
    */
   getBaselineTable(): Promise<TableEntry[]>;
   getCurrentMatchday(): Promise<MatchdayResult>;
+  /**
+   * Für die Spieltagsnavigation auf der 3.-Liga-Seite (Polish-Pass).
+   * Rein additiv, gleiches Muster wie getCurrentMatchday(): nutzt in
+   * OpenLigaDbFootballProvider ausschließlich die bereits vorhandene
+   * private Season-Match-Quelle, kein neuer Fetch, kein neues Mapping.
+   */
+  getMatchday(matchday: number): Promise<MatchdayResult>;
+  getSeasonMatchdayRange(): Promise<{ min: number; max: number }>;
 }

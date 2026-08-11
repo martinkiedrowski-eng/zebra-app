@@ -47,18 +47,22 @@ export function HomeView({
 
   return (
     <>
-      <header className="mb-4 flex items-center justify-between">
+      <header className="mb-4 flex items-start justify-between">
         <div>
           <p className="font-text text-xs uppercase tracking-wide text-zebra-mute">Heute beim</p>
           <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-zebra-ice">
             MSV Duisburg
           </h1>
         </div>
-        {isDemoData && (
-          <span className="rounded-pill border border-zebra-border px-2.5 py-1 font-text text-[10px] font-medium uppercase tracking-wide text-zebra-mute-2">
-            Demo-Daten
-          </span>
-        )}
+        <div className="flex flex-col items-end gap-1.5">
+          {/* Rein typografisches Brand-Detail, kein Logo/Wappen. */}
+          <span className="font-display text-xs font-semibold tracking-[0.2em] text-zebra-blue">1902</span>
+          {isDemoData && (
+            <span className="rounded-pill border border-zebra-border px-2.5 py-1 font-text text-[10px] font-medium uppercase tracking-wide text-zebra-mute-2">
+              Demo-Daten
+            </span>
+          )}
+        </div>
       </header>
 
       {/*

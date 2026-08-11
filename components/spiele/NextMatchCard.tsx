@@ -3,17 +3,18 @@ import { Match } from "@/types/match";
 import { MSV_TEAM_ID } from "@/lib/constants";
 import { formatKickoffTime, formatCountdown } from "@/lib/format";
 import { relativeMatchDateLabel } from "@/lib/spiele/relativeDate";
+import { hasReliableMatchId } from "@/lib/spiele/matchLink";
 
-export function NextMatchCard({ match }: { match: Match }) {
+export function NextMatchCard({ match, isMockMode }: { match: Match; isMockMode: boolean }) {
   const isHome = match.homeTeam.id === MSV_TEAM_ID;
   const opponent = isHome ? match.awayTeam : match.homeTeam;
   const hasKickoff = !!match.kickoff;
+  // Nur klickbar, wenn Match Center für dieses Spiel voraussichtlich
+  // tatsächlich auflöst — siehe lib/spiele/matchLink.ts.
+  const clickable = hasReliableMatchId(match.id, isMockMode);
 
-  return (
-    <Link
-      href={`/spiele/${match.id}`}
-      className="block rounded-card border border-zebra-border bg-zebra-surface p-4.5"
-    >
+  const body = (
+    <>
       <div className="mb-3 flex items-center justify-between">
         <span className="font-text text-xs text-zebra-mute">
           {match.competition}
@@ -44,6 +45,18 @@ export function NextMatchCard({ match }: { match: Match }) {
       )}
 
       {match.venue && <p className="mt-2 font-text text-xs text-zebra-mute">{match.venue}</p>}
+    </>
+  );
+
+  const className = "block rounded-card border border-zebra-border bg-zebra-surface p-4.5";
+
+  if (!clickable) {
+    return <div className={className}>{body}</div>;
+  }
+
+  return (
+    <Link href={`/spiele/${match.id}`} className={className}>
+      {body}
     </Link>
   );
 }

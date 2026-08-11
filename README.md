@@ -568,6 +568,94 @@ korrekt auf die (vorher als Placeholder existierende) Route.
 OpenLigaDB-Mapping, `tableEngine`/`leagueContext`/`multiplex`,
 News-Aggregations-/Deduplizierungslogik, alle Debug-Probes.
 
+## ZEBRA App Polish + Data Completeness Pass (Phase 4C)
+
+Fünf gezielte Korrekturen, keine Architekturänderung.
+
+**1) Home-Branding:** Bottom-Nav-Label „Heute" → „Home" (Route
+unverändert). Dezentes typografisches „1902" oben rechts im Home-Header
+(`components/home/HomeView.tsx`) — reiner Text in Zebra-Blau, kein
+Logo/Wappen, Header nicht höher geworden.
+
+**2) Spiele-Tap-Fehler — Ursache gefunden und behoben:** `pickString()`
+akzeptiert nur `typeof value === "string"`. Die reale OpenLigaDB-`MatchID`
+kommt aber sehr wahrscheinlich als JSON-**Zahl**, nicht als String — sie
+wurde deshalb bislang als "nicht vorhanden" behandelt, und `mapMatch.ts`
+fiel auf eine **synthetische Ersatz-ID** zurück (`teamId-teamId-kickoff`
+statt der echten numerischen ID). Ein Link zu dieser Ersatz-ID führt zu
+keiner sinnvollen Match-Center-Seite. Root-Cause-Fix: neuer Helper
+`pickIdAsString()` (`providers/football/openligadb/safe.ts`) akzeptiert
+String **und** Zahl für ID-Felder, jetzt für `MatchID` und `GoalID`
+verwendet (`mapMatch.ts`). Zusätzlich, wie explizit gefordert, **defensiv
+auf UI-Ebene**: „Kommende Spiele" und „Ergebnisse" im Spiele-Tab sind jetzt
+grundsätzlich nicht mehr antippbar (`components/spiele/{UpcomingMatchRow,
+ResultRow}.tsx`, kein `<Link>` mehr). Die „Nächstes Spiel"-Hero-Card
+(`NextMatchCard.tsx`) ist nur noch klickbar, wenn `match.id` wie eine
+echte, rein numerische OpenLigaDB-ID aussieht (`lib/spiele/matchLink.ts`,
+`hasReliableMatchId()`) — im Mock-Modus immer klickbar, da der
+Mock-Provider die ID ohnehin ignoriert.
+
+**3) Wettbewerbe im Spiele-Tab — Reality Check statt Raten:** Recherche
+bestätigt real (DFB-Datencenter): MSV Duisburg – SV Elversberg, DFB-Pokal
+2026/27, 1. Runde, 22.08.2026. Die **offizielle OpenLigaDB-Dokumentation**
+weist aber ausdrücklich darauf hin, dass der DFB-Pokal (anders als
+bl1/bl2/bl3) **kein** verlässliches Shortcut/Season-Schema hat. Deshalb
+**keine Competition-ID geraten und keine Integration gebaut** — stattdessen
+ein isolierter, temporärer Debug-Probe `/debug/competitions`
+(`app/debug/competitions/page.tsx`), der den echten `getavailableleagues`-
+Endpunkt abruft und nach "Pokal"/"DFB"/"Niederrhein" filtert. `/spiele`
+zeigt weiterhin ausschließlich 3.-Liga-Spiele — unverändert, da nichts
+Belastbares zum Integrieren vorlag. Niederrheinpokal: keine Anhaltspunkte
+gefunden, dass OpenLigaDB diesen Wettbewerb überhaupt führt — offener
+Punkt, siehe Abschlussbericht.
+
+**4) 3.-Liga-Seite:**
+- **Teamnamen:** `components/liga/MatchdayList.tsx` nutzte feste
+  `w-16`-Spalten für Heim-/Auswärtsteam — jetzt `flex-1 min-w-0 truncate`
+  auf beiden Seiten, Score/Uhrzeit dazwischen `flex-shrink-0`. Namen nutzen
+  jetzt den tatsächlich verfügbaren Platz, `ellipsis` nur noch bei wirklich
+  zu langen Namen.
+- **MSV-Hervorhebung:** dieselbe visuelle Logik wie die Tabelle
+  (`LeagueTable.tsx`) — linker `zebra-blue`-Akzentstrich +
+  `bg-zebra-blue-dim/40`-Tönung statt nur Rahmenfarbe, Teamname zusätzlich
+  in Zebra-Blau.
+- **Spieltagsnavigation:** neue, minimale additive Provider-Methoden
+  `getMatchday(n)` / `getSeasonMatchdayRange()` (`FootballDataProvider.ts`,
+  beide Implementierungen) — nutzen in `OpenLigaDbFootballProvider.ts`
+  ausschließlich die bereits vorhandene private `seasonMatchesRaw()`,
+  identisches Muster wie das bestehende `getCurrentMatchday()`, kein neuer
+  Fetch, kein neues Mapping. Navigation über URL-Query
+  `/3-liga?spieltag=N` (`app/3-liga/page.tsx`, `‹ N. SPIELTAG ›` in
+  `LigaView.tsx`), Grenzen aus echten Spieltagsnummern der Saison
+  abgeleitet. Tabelle/Live-Tabelle/Kontext bleiben strikt an den
+  tatsächlich aktuellen Spieltag gebunden, unabhängig vom durchblätterten
+  Spieltag.
+
+**5) liga3-online.de — Encoding-Ursache gefunden und behoben:**
+`decodeEntities()` (`lib/newsFeed/xmlUtils.ts`) kannte bislang nur 5
+hartcodierte Entities (`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;`). Alles
+andere — insbesondere numerische Entities wie `&#252;` (ü), `&#228;` (ä),
+`&#8222;`/`&#8220;` (typografische Anführungszeichen), `&#8211;` (Gedankenstrich)
+sowie benannte Entities wie `&uuml;`/`&szlig;` — blieb als roher
+Entity-Text im Titel stehen. Generisch behoben: benannte Entity-Tabelle
+für deutsche/typografische Zeichen plus generische Dezimal- und
+Hex-Entity-Dekodierung (`String.fromCodePoint`). Zusätzlich wird der
+Titel jetzt (wie zuvor nur der Teaser) durch `stripCdataAndTags()`
+geschickt — falls `<title>` CDATA-gewrappt ist, verschwinden die
+`<![CDATA[`/`]]>`-Marker jetzt auch dort. Zentral in der gemeinsamen
+`xmlUtils.ts` behoben (nicht liga3-spezifisch gehackt) — kommt automatisch
+auch YouTube-Titeln zugute, keine andere Quelle wurde funktional verändert.
+Getestet mit drei konstruierten, realistisch nachgebauten Beispiel-Titeln
+(siehe Abschlussbericht im Chat) — kein Live-Fetch in dieser Sandbox
+möglich.
+
+**Unverändert:** MSV-News-Pipeline, ZebraTV-Pipeline, News-Hub-Layout,
+News-Deduplizierung, MSV-Parser, Matchday-Live-Logik,
+`tableEngine.ts`/`leagueContext.ts`/`multiplex.ts`, restliche
+OpenLigaDB-Mappings, alle Debug-Probes außer dem neuen
+`/debug/competitions`, Mehr-/ZebraTV-/Datenquellen-/Über-ZEBRA-Seite,
+globale Styles.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

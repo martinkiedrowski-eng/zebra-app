@@ -3,7 +3,7 @@ import { NextMatchCard } from "@/components/spiele/NextMatchCard";
 import { UpcomingMatchRow } from "@/components/spiele/UpcomingMatchRow";
 import { ResultRow } from "@/components/spiele/ResultRow";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { footballDataProvider } from "@/providers/registry";
+import { footballDataProvider, IS_MOCK_MODE } from "@/providers/registry";
 
 // Server Component. Beantwortet eine Frage: "Wann spielt der MSV als
 // Nächstes – und wie liefen die letzten Spiele?" Bewusst KEINE
@@ -36,7 +36,7 @@ export default async function SpielePage() {
       <section className="mb-6">
         <SectionHeader title="Nächstes Spiel" />
         {nextMatch ? (
-          <NextMatchCard match={nextMatch} />
+          <NextMatchCard match={nextMatch} isMockMode={IS_MOCK_MODE} />
         ) : (
           <div className="rounded-card border border-zebra-border bg-zebra-surface p-4 text-center">
             <p className="font-text text-sm text-zebra-mute">Aktuell ist kein nächstes Spiel bekannt.</p>

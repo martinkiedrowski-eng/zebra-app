@@ -5,6 +5,7 @@ import { deriveMatchStatus } from "./mapStatus";
 import {
   isRawObject,
   pickString,
+  pickIdAsString,
   pickNumber,
   pickBoolean,
   pickArray,
@@ -79,7 +80,7 @@ function extractGoals(raw: Record<string, unknown>, matchId: string): RawGoal[] 
   return arr.filter(isRawObject).map((g, i) => {
     const minute = pickNumber(g, ["MatchMinute", "matchMinute"], NaN);
     return {
-      id: pickString(g, ["GoalID", "goalID", "GoalId", "goalId"], `${matchId}-goal-${i}`),
+      id: pickIdAsString(g, ["GoalID", "goalID", "GoalId", "goalId"], `${matchId}-goal-${i}`),
       scoreTeam1: pickNumber(g, ["ScoreTeam1", "scoreTeam1"]),
       scoreTeam2: pickNumber(g, ["ScoreTeam2", "scoreTeam2"]),
       minute: Number.isFinite(minute) ? minute : null,
@@ -91,7 +92,7 @@ function extractGoals(raw: Record<string, unknown>, matchId: string): RawGoal[] 
 }
 
 function extractMatchFields(raw: Record<string, unknown>): RawMatchFields {
-  const matchId = pickString(raw, ["MatchID", "matchID", "MatchId", "matchId"]);
+  const matchId = pickIdAsString(raw, ["MatchID", "matchID", "MatchId", "matchId"]);
   const kickoff = pickString(raw, ["MatchDateTime", "matchDateTime"]);
   const kickoffUtc = pickString(raw, ["MatchDateTimeUTC", "matchDateTimeUTC"], kickoff);
   const isFinished = pickBoolean(raw, ["MatchIsFinished", "matchIsFinished"]);
