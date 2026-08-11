@@ -36,6 +36,7 @@ export interface RawMatchFields {
   isFinished: boolean;
   leagueName: string;
   groupOrderId: number;
+  roundName: string | null;
   locationStadium: string | null;
 }
 
@@ -102,13 +103,16 @@ function extractMatchFields(raw: Record<string, unknown>): RawMatchFields {
   const groupOrderId = isRawObject(groupObj)
     ? pickNumber(groupObj, ["GroupOrderID", "groupOrderID", "GroupOrderId", "groupOrderId"], 0)
     : 0;
+  const roundName = isRawObject(groupObj)
+    ? pickNullableString(groupObj, ["GroupName", "groupName"])
+    : null;
 
   const locationObj = raw["Location"] ?? raw["location"];
   const locationStadium = isRawObject(locationObj)
     ? pickNullableString(locationObj, ["LocationStadium", "locationStadium"])
     : null;
 
-  return { matchId, kickoff, kickoffUtc, isFinished, leagueName, groupOrderId, locationStadium };
+  return { matchId, kickoff, kickoffUtc, isFinished, leagueName, groupOrderId, roundName, locationStadium };
 }
 
 /**
@@ -200,6 +204,7 @@ export function mapOldbMatch(raw: unknown): Match {
     id: fields.matchId || `${homeTeam.id}-${awayTeam.id}-${fields.kickoff}`,
     competition: fields.leagueName,
     matchday: fields.groupOrderId,
+    roundName: fields.roundName,
     kickoff: fields.kickoff,
     venue: fields.locationStadium ?? "",
     homeTeam,

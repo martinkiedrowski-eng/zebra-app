@@ -686,6 +686,66 @@ Recherche dafür.
 News-Parser/Encoding-Fix, ZebraTV, Mehr, BottomNav, Matchday-Debug,
 Designsystem, `/spiele`-Logik, `/3-liga`.
 
+## DFB-Pokal-Integration in /spiele (Phase 4E)
+
+Live über `/debug/competitions` verifiziert: Shortcut `dfb`, Season `2026`
+("DFB Pokal 2026/2027", 32 Spiele, MSV vs. SV 07 Elversberg gefunden,
+MatchID 81851, 1. Runde, 2026-08-27T15:30:00). Diese Koordinaten (nicht
+die Matchdaten selbst!) sind jetzt in `config/football.ts` als
+`DFB_POKAL_CONFIG` hinterlegt — die eigentlichen Spieldaten kommen weiter
+ausschließlich live von OpenLigaDB, nichts ist hardcodiert.
+
+**Strukturelle, nicht nur konventionelle Trennung von der 3.-Liga-Pipeline:**
+`providers/football/openligadb/cupClient.ts` (neu) ist ein komplett
+eigenständiger Fetch-Client mit eigenem Cache — bewusst **kein** Import
+von `client.ts` (das strukturell an `FOOTBALL_CONFIG`/3. Liga gebunden ist
+und von `tableEngine`-relevanten Methoden verwendet wird). `lib/spiele/
+dfbPokal.ts` (neu) nutzt diesen Client plus den bereits bestehenden,
+kompetitionsunabhängigen `mapOldbMatch()` — kein neues Mapping, nur ein
+neuer Aufrufer. Diese Datei wird ausschließlich von `app/spiele/page.tsx`
+importiert, sonst nirgendwo — `tableEngine.ts`, `leagueContext.ts`,
+`multiplex.ts` und `/3-liga` kennen den Pokal nicht einmal.
+
+**Aggregation:** `lib/spiele/aggregateSchedule.ts` (neu) — eine reine
+Merge-/Sortierfunktion ohne Fetch-Logik. Führt die bereits geladenen
+Liga- und Pokal-Match-Arrays zu einem chronologischen Spielplan zusammen,
+sortiert ausschließlich nach `match.kickoff`. `app/spiele/page.tsx` ruft
+jetzt `getUpcomingMsvMatches()`/`getRecentMsvResults()` (Liga,
+unverändert) und `getCupMsvMatches()` (Pokal, neu) parallel ab und
+mergt sie — „Nächstes Spiel" ist dadurch automatisch das chronologisch
+erste Element des gemergten Pools, unabhängig vom Wettbewerb.
+
+**Kennzeichnung:** `competitionLabel()` liefert `"DFB-POKAL · 1. RUNDE"`
+(aus dem echten `roundName`-Feld, siehe unten) für Pokalspiele,
+`undefined` für Liga-Spiele — die drei Spiele-Komponenten
+(`NextMatchCard`/`UpcomingMatchRow`/`ResultRow`) rendern dieses Label nur,
+wenn es gesetzt ist; die bestehende Liga-Darstellung ist dadurch optisch
+unverändert.
+
+**Neues Datenfeld `roundName`:** `types/match.ts` um `roundName?: string |
+null` erweitert, `mapMatch.ts` extrahiert es zusätzlich zu `groupOrderId`
+aus `Group.GroupName`/`groupName` (rein additiv, ändert keine bestehende
+Extraktion). Wird von der Live-Tabellen-/Multiplex-Logik nirgendwo
+gelesen, ist für sie also folgenlos vorhanden.
+
+**Klickbarkeit:** keine Sonderbehandlung nötig — `hasReliableMatchId()`
+(`lib/spiele/matchLink.ts`, unverändert) ist bereits wettbewerbs-
+unabhängig (reiner Zahlen-Check auf `match.id`). MatchID `81851` ist ein
+sauberer numerischer String und wird deshalb nach derselben Regel wie
+jedes Liga-Spiel behandelt — keine neue Logik, kein Sonderfall für den
+Pokal.
+
+**Mock-Modus:** `getCupMsvMatches()` liefert im Mock-Modus sofort leere
+Arrays (kein Live-Fetch aus der Demo-Sandbox heraus, keine erfundenen
+Pokal-Mock-Daten) — `/spiele` zeigt dort weiterhin nur die bestehenden
+Liga-Mock-Spiele.
+
+**Unverändert:** `/3-liga`, 3.-Liga-Tabelle, Spieltagsnavigation,
+`tableEngine.ts`, `leagueContext.ts`, `multiplex.ts`, `client.ts`
+(3.-Liga-Fetch-Pipeline), Home, „1902", BottomNav, News/liga3-Encoding-Fix,
+ZebraTV, Mehr, `/debug/matchday`, `/debug/competitions` (bleibt bestehen).
+Niederrheinpokal weiterhin nicht verfolgt.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

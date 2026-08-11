@@ -34,6 +34,14 @@ export interface Match {
   minute: number | null;
   events: MatchEvent[];
   isMsvMatch: boolean;
+  /**
+   * Menschenlesbare Runden-/Gruppenbezeichnung aus der Quelle (z.B.
+   * "1. Runde" bei Pokalwettbewerben). Additiv für die DFB-Pokal-
+   * Integration in /spiele — bestehende Ligalogik liest dieses Feld
+   * nirgendwo, `matchday` (Zahl) bleibt für Liga-Zwecke unverändert die
+   * maßgebliche Größe.
+   */
+  roundName?: string | null;
   // Nur vorhanden, wenn eine Datenquelle diese Tiefe liefert — UI blendet
   // die jeweiligen Bereiche komplett aus, statt leere Platzhalter zu zeigen.
   stats?: MatchStats;

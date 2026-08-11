@@ -5,20 +5,29 @@ import { formatKickoffTime, formatCountdown } from "@/lib/format";
 import { relativeMatchDateLabel } from "@/lib/spiele/relativeDate";
 import { hasReliableMatchId } from "@/lib/spiele/matchLink";
 
-export function NextMatchCard({ match, isMockMode }: { match: Match; isMockMode: boolean }) {
+export function NextMatchCard({
+  match,
+  isMockMode,
+  competitionLabel,
+}: {
+  match: Match;
+  isMockMode: boolean;
+  /** "DFB-Pokal · 1. Runde" o.ä. — nur bei Pokalspielen gesetzt, Liga-Spiele unverändert. */
+  competitionLabel?: string;
+}) {
   const isHome = match.homeTeam.id === MSV_TEAM_ID;
   const opponent = isHome ? match.awayTeam : match.homeTeam;
   const hasKickoff = !!match.kickoff;
   // Nur klickbar, wenn Match Center für dieses Spiel voraussichtlich
-  // tatsächlich auflöst — siehe lib/spiele/matchLink.ts.
+  // tatsächlich auflöst — siehe lib/spiele/matchLink.ts. Gilt unverändert
+  // und wettbewerbsunabhängig auch für Pokalspiele.
   const clickable = hasReliableMatchId(match.id, isMockMode);
 
   const body = (
     <>
       <div className="mb-3 flex items-center justify-between">
         <span className="font-text text-xs text-zebra-mute">
-          {match.competition}
-          {match.matchday ? ` · ${match.matchday}. Spieltag` : ""}
+          {competitionLabel ?? `${match.competition}${match.matchday ? ` · ${match.matchday}. Spieltag` : ""}`}
         </span>
         <span className="rounded-pill bg-zebra-blue-dim px-2.5 py-1 font-text text-[10px] font-medium uppercase tracking-wide text-zebra-blue">
           {isHome ? "Heimspiel" : "Auswärtsspiel"}

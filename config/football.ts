@@ -24,6 +24,21 @@ export const FOOTBALL_CONFIG = {
 } as const;
 
 /**
+ * DFB-Pokal — ausschließlich für die MSV-Pflichtspiel-Aggregation auf
+ * /spiele (Phase 4E). Bewusst getrennt von FOOTBALL_CONFIG (3. Liga), nie
+ * gemeinsam verwendet — siehe providers/football/openligadb/cupClient.ts.
+ * Werte live über /debug/competitions verifiziert (HTTP 200, 32 Spiele,
+ * MSV vs. SV 07 Elversberg gefunden, MatchID 81851, 1. Runde,
+ * 2026-08-27T15:30:00) — hier nur die Competition-Koordinaten, keine
+ * Match-Daten selbst.
+ */
+export const DFB_POKAL_CONFIG = {
+  leagueShortcut: "dfb",
+  season: 2026,
+  competitionName: "DFB-Pokal",
+} as const;
+
+/**
  * Polling-Frequenzen (Millisekunden) für die getlastchangedate-basierte
  * Aktualisierung. Zentral konfigurierbar statt in Komponenten verstreut.
  */
