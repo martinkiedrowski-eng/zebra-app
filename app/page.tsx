@@ -5,6 +5,8 @@ import { MOCK_LIVE_MATCH } from "@/mock/matches";
 import { selectHomeTableExcerpt } from "@/lib/homeTableExcerpt";
 import { MSV_TEAM_ID } from "@/lib/constants";
 import { getAggregatedNews } from "@/lib/newsFeed/aggregate";
+import { getCupMsvMatches } from "@/lib/spiele/dfbPokal";
+import { mergeUpcoming, competitionLabel } from "@/lib/spiele/aggregateSchedule";
 
 // Server Component: lädt über die Provider-Architektur — Mock oder
 // OpenLigaDB, je nach FOOTBALL_DATA_SOURCE (siehe providers/registry.ts).
@@ -14,20 +16,33 @@ import { getAggregatedNews } from "@/lib/newsFeed/aggregate";
 // injiziert — dort bestimmt footballDataProvider.getLiveMatch() den
 // tatsächlichen Zustand.
 //
+// Next Up (Product Polish Batch 1A): "Nächstes Spiel" ist jetzt das
+// chronologisch nächste MSV-PFLICHTSPIEL aus 3. Liga + DFB-Pokal — dieselbe
+// Aggregation wie /spiele (footballDataProvider.getUpcomingMsvMatches() +
+// lib/spiele/dfbPokal.ts::getCupMsvMatches() + lib/spiele/
+// aggregateSchedule.ts::mergeUpcoming()), keine zweite Pipeline. Live-Zustand
+// bleibt unverändert liga-only (keine neue Live-/Matchday-Logik in diesem
+// Batch).
+//
 // Tabellen-Vorschau: lädt bewusst die VOLLSTÄNDIGE Tabelle über
 // getTable() (unveränderte Provider-Methode) und wählt den Home-Ausschnitt
 // lokal über das reine Utility selectHomeTableExcerpt() aus — keine
 // Provider-/Mapping-Änderung, keine Neuberechnung von Positionen, nur eine
 // andere Auswahl aus bereits vorhandenen, fertig sortierten Einträgen.
 //
-// News: nutzt ab jetzt denselben produktiven Aggregator wie /news (siehe
+// Form (Batch 1A): footballDataProvider.getMsvForm(5) ist unverändert und
+// bereits Liga-only (nutzt intern dieselbe Liga-Season-Quelle wie
+// getNextMatch()/getUpcomingMsvMatches() — nie den isolierten
+// DFB-Pokal-Client). DFB-Pokal-Ergebnisse können die Form dadurch
+// architektonisch gar nicht verfälschen.
+//
+// News: nutzt denselben produktiven Aggregator wie /news (siehe
 // lib/newsFeed/aggregate.ts) — unabhängig vom Football-Mock/OpenLigaDB-
-// Modus, echte Quellen, echte Daten. Der bisherige newsProvider.getTopNews()
-// wird hier nicht mehr aufgerufen (Zebra Radar über newsProvider.getRadarEvents()
-// bleibt unverändert, das ist ein eigenes Feature).
+// Modus, echte Quellen, echte Daten.
 export default async function HomePage() {
-  const [nextMatch, liveMatch, form, fullTable, radarEvents, newsItems] = await Promise.all([
-    footballDataProvider.getNextMatch(),
+  const [upcomingLeague, cup, liveMatch, form, fullTable, radarEvents, newsItems] = await Promise.all([
+    footballDataProvider.getUpcomingMsvMatches(3),
+    getCupMsvMatches(3, 0),
     IS_MOCK_MODE ? Promise.resolve(MOCK_LIVE_MATCH) : footballDataProvider.getLiveMatch(),
     footballDataProvider.getMsvForm(5),
     footballDataProvider.getTable(),
@@ -35,13 +50,17 @@ export default async function HomePage() {
     getAggregatedNews(),
   ]);
 
+  const upcomingAll = mergeUpcoming(upcomingLeague, cup.upcoming);
+  const nextEntry = upcomingAll[0] ?? null;
+
   const table = selectHomeTableExcerpt(fullTable, MSV_TEAM_ID, 5);
   const topNews = newsItems.slice(0, 3);
 
   return (
     <AppShell>
       <HomeView
-        nextMatch={nextMatch}
+        nextMatch={nextEntry ? nextEntry.match : null}
+        nextMatchCompetitionLabel={nextEntry ? competitionLabel(nextEntry) : undefined}
         liveMatch={liveMatch}
         form={form}
         table={table}

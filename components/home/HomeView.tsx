@@ -13,11 +13,29 @@ import { TableExcerpt } from "@/components/table/TableExcerpt";
 import { FormCurve } from "@/components/form/FormCurve";
 import { NewsFeedRow } from "@/components/news/NewsFeedRow";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { hasReliableMatchId } from "@/lib/spiele/matchLink";
+
+const FORM_SLOTS = 5;
+
+/**
+ * form kommt (wie bisher, unverändert über footballDataProvider.getMsvForm())
+ * neuestes-zuerst sortiert. Für die Anzeige "ältestes → neuestes" wird
+ * hier lokal umgedreht und auf FORM_SLOTS aufgefüllt — reine
+ * Darstellungslogik, keine neue Datenquelle, kein Provider-Aufruf.
+ * Auffüllung erfolgt bewusst rechts (spätere/unbekannte Slots), damit
+ * z.B. nach einem Saisonspiel "S – – – –" entsteht statt "– – – – S".
+ */
+function buildFormSlots(form: FormMatch[]): (FormMatch | null)[] {
+  const chronological = [...form].reverse();
+  return Array.from({ length: FORM_SLOTS }, (_, i) => chronological[i] ?? null);
+}
 
 type MatchState = "next" | "live";
 
 interface HomeViewProps {
   nextMatch: Match | null;
+  /** "DFB-POKAL · 1. RUNDE" bei Pokal, sonst undefined — siehe app/page.tsx. */
+  nextMatchCompetitionLabel?: string;
   liveMatch: Match | null;
   form: FormMatch[];
   table: TableEntry[];
@@ -31,6 +49,7 @@ interface HomeViewProps {
 
 export function HomeView({
   nextMatch,
+  nextMatchCompetitionLabel,
   liveMatch,
   form,
   table,
@@ -112,9 +131,13 @@ export function HomeView({
           nextMatch && (
             <section className="mb-6">
               <SectionHeader title="Next Up" />
-              <Link href={`/spiele/${nextMatch.id}`} className="block">
-                <MatchCard match={nextMatch} variant="featured" />
-              </Link>
+              {hasReliableMatchId(nextMatch.id, isMockMode) ? (
+                <Link href={`/spiele/${nextMatch.id}`} className="block">
+                  <MatchCard match={nextMatch} variant="featured" competitionLabel={nextMatchCompetitionLabel} />
+                </Link>
+              ) : (
+                <MatchCard match={nextMatch} variant="featured" competitionLabel={nextMatchCompetitionLabel} />
+              )}
             </section>
           )
         )}
@@ -138,7 +161,7 @@ export function HomeView({
           <div>
             <SectionHeader title="Form" muted={!!showLive} />
             <div className="rounded-card border border-zebra-border bg-zebra-surface p-4">
-              <FormCurve matches={form} />
+              <FormCurve matches={buildFormSlots(form)} />
             </div>
           </div>
         </section>

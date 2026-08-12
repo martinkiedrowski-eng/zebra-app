@@ -8,6 +8,8 @@ type MatchCardVariant = "compact" | "featured" | "live";
 interface MatchCardProps {
   match: Match;
   variant?: MatchCardVariant;
+  /** Nur für "featured": z.B. "DFB-POKAL · 1. RUNDE". Ligaspiele unverändert. */
+  competitionLabel?: string;
 }
 
 function ScoreOrTime({ match, size = "text-xl" }: { match: Match; size?: string }) {
@@ -25,7 +27,7 @@ function ScoreOrTime({ match, size = "text-xl" }: { match: Match; size?: string 
   );
 }
 
-export function MatchCard({ match, variant = "compact" }: MatchCardProps) {
+export function MatchCard({ match, variant = "compact", competitionLabel }: MatchCardProps) {
   if (variant === "live") {
     return (
       <div className="relative overflow-hidden rounded-card bg-zebra-surface-raised p-4.5">
@@ -57,7 +59,7 @@ export function MatchCard({ match, variant = "compact" }: MatchCardProps) {
       >
         <div className="mb-3 flex items-center justify-between">
           <span className="font-text text-xs text-zebra-mute">
-            {match.competition} · {formatKickoffDate(match.kickoff)}
+            {competitionLabel ?? `${match.competition} · ${formatKickoffDate(match.kickoff)}`}
           </span>
           <StatusPill status={match.status} minute={match.minute} />
         </div>

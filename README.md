@@ -787,6 +787,49 @@ automatisches Matching ohne manuelle Kontrolle empfohlen**. Keine gemeinsame
 Quelle für Kader + Zuschauer gefunden. Keine neue produktive UI, kein
 neuer Provider, keine bestehende Logik verändert.
 
+## Product Polish Batch 1A — Home: Pflichtspiel + Form (Phase 4H)
+
+Zwei gezielte Home-Verbesserungen, keine Architekturänderung.
+
+**1) Nächstes Pflichtspiel (3. Liga + DFB-Pokal):** `app/page.tsx` ruft
+jetzt `footballDataProvider.getUpcomingMsvMatches(3)` +
+`getCupMsvMatches(3, 0)` parallel ab und führt sie über die **bereits
+bestehende** `mergeUpcoming()` aus `lib/spiele/aggregateSchedule.ts`
+zusammen — exakt dieselbe Aggregation wie `/spiele`, keine zweite
+Pipeline. `footballDataProvider.getNextMatch()` wird von Home nicht mehr
+aufgerufen (die Provider-Methode selbst bleibt unverändert im Interface
+bestehen, ungenutzt-aber-nicht-entfernt, um keine unrelated
+Refaktorierung vorzunehmen). Wettbewerbslabel („DFB-POKAL · 1. RUNDE")
+über die bereits bestehende `competitionLabel()`-Funktion, als neuer
+optionaler Prop `competitionLabel` an `components/match/MatchCard.tsx`
+durchgereicht (additiv — `MatchCard` wird ausschließlich von Home
+verwendet, Match Center hat eine eigene `MatchHero.tsx`, keine Berührung).
+Klickbarkeits-Check auf die Hero-Card angewendet
+(`hasReliableMatchId()`, bereits bestehendes Utility aus
+`lib/spiele/matchLink.ts`) — vorher war die Home-Hero-Card
+unconditional verlinkt, das war eine Lücke gegenüber `/spiele`s
+bestehender Regel, jetzt konsistent.
+
+**2) Form der letzten 5 Ligaspiele:** `footballDataProvider.getMsvForm(5)`
+ist unverändert und bereits Liga-only (nutzt intern dieselbe
+Liga-Season-Quelle wie `getNextMatch()`, nie den isolierten
+DFB-Pokal-Client) — DFB-Pokal-Ergebnisse können die Form architektonisch
+gar nicht verfälschen, ganz ohne neue Filterung. Neue reine
+Darstellungsfunktion `buildFormSlots()` in `HomeView.tsx` dreht das
+(bereits neuestes-zuerst sortierte) Ergebnis lokal um und füllt auf 5
+Slots auf — **chronologisch ältestes→neuestes, aktuellstes rechts**;
+fehlende frühe Saisonspiele werden als neutrale Slots **rechts**
+aufgefüllt (z. B. nach einem Spiel: `S – – – –`), keine erfundenen
+Ergebnisse. `components/form/FormCurve.tsx` additiv erweitert: akzeptiert
+jetzt `(FormMatch | null)[]` statt nur `FormMatch[]` und rendert für
+`null` einen neutralen Kreis — Match Center (`TeamFormCompare.tsx`)
+übergibt weiterhin nie `null` und ist optisch komplett unverändert
+(TypeScript bestätigt `FormMatch[]` bleibt kompatibel zuweisbar).
+
+**Unverändert:** `tableEngine.ts`, `leagueContext.ts`, `multiplex.ts`,
+alle OpenLigaDB-Mapping-Dateien, `/spiele`, `/3-liga`, Match Center, News,
+Mehr, ZebraTV, Bottom Navigation, alle Debug-Probes, Live-/Matchday-Logik.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
