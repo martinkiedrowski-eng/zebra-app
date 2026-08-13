@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/layout/AppShell";
-import { NewsFeedCard } from "@/components/news/NewsFeedCard";
+import { NewsFeed } from "@/components/news/NewsFeed";
 import { getAggregatedNews } from "@/lib/newsFeed/aggregate";
 
 // Server Component: aggregiert MSV Duisburg (offiziell), ZebraTV/YouTube
@@ -8,6 +8,12 @@ import { getAggregatedNews } from "@/lib/newsFeed/aggregate";
 // neueste zuerst, das war's. Fällt eine Quelle aus, fehlen einfach ihre
 // Einträge; technische Details dazu stehen ausschließlich unter
 // /debug/content-sources, nicht hier.
+//
+// Filter (Product Polish 2B): der komplette Feed wird weiterhin genau
+// einmal hier geladen und unverändert an die Client-Komponente NewsFeed
+// durchgereicht — Alle/MSV/Videos filtern rein lokal auf diesem bereits
+// vorhandenen Array, kein zweiter Aggregator-Aufruf, kein erneuter Fetch
+// beim Tabwechsel.
 export default async function NewsPage() {
   const items = await getAggregatedNews();
 
@@ -18,19 +24,7 @@ export default async function NewsPage() {
         <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-zebra-ice">News</h1>
       </header>
 
-      {items.length === 0 ? (
-        <div className="rounded-card border border-zebra-border bg-zebra-surface p-6 text-center">
-          <p className="font-text text-sm text-zebra-mute">
-            Gerade sind keine News verfügbar. Schau bald wieder vorbei.
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {items.map((item) => (
-            <NewsFeedCard key={item.id} item={item} variant="list" />
-          ))}
-        </div>
-      )}
+      <NewsFeed items={items} />
     </AppShell>
   );
 }

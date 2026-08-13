@@ -980,6 +980,59 @@ ausreichend — keine Änderung vorgenommen.**
 DFB-Pokal-Aggregation, OpenLigaDB-Mapping, BottomNav, Mehr, ZebraTV, alle
 Debug-Probes, Home/Batch 1A. Keine neue Live-/Matchday-/Post-Match-Logik.
 
+## Product Polish 2B — News-Filter + OFFIZIELL-Kennzeichnung (Phase 4M)
+
+**Bestandsanalyse zuerst:** `NewsFeedItem.sourceType` (`"official"` |
+`"video"` | `"editorial"`) unterscheidet bereits zuverlässig und
+exklusiv die drei Quellen (`official` = ausschließlich msv-duisburg.de,
+`video` = ausschließlich ZebraTV/YouTube, `editorial` = ausschließlich
+liga3-online.de) — **keine Modellerweiterung nötig**, keine neue
+Source-Erkennung gebaut.
+
+**Filter (`Alle | MSV | Videos`):** neue reine Funktion
+`lib/newsFeed/filters.ts::filterNewsFeed()` — `Alle` unverändert,
+`Videos` = `sourceType === "video"`, `MSV` = `sourceType === "official"`
+ODER `"video"` (die Quelle selbst ist bereits MSV-spezifisch) ODER bei
+`"editorial"` ein Wortgrenzen-Treffer auf `MSV`/`Duisburg` in Titel+Teaser
+(`/\b(msv|duisburg)\b/i`, verhindert zufällige Teilstring-Treffer wie
+„xMSVy"). Mit den in der Aufgabe genannten Edge Cases getestet (Node-
+Simulation) — alle bestehen.
+
+**Client-seitig, kein Re-Fetch:** neue Komponente
+`components/news/NewsFeed.tsx` (`"use client"`) bekommt den **bereits
+vollständig geladenen** Feed als Prop von `app/news/page.tsx`
+(`getAggregatedNews()`, unverändert, weiterhin nur einmal serverseitig
+aufgerufen) und filtert rein lokal per `useState`. Kein Query-Parameter,
+kein LocalStorage — Filter setzt sich beim erneuten Öffnen von `/news`
+zurück auf „Alle", wie vorgegeben.
+
+**OFFIZIELL-Kennzeichnung:** in `components/news/NewsFeedCard.tsx`
+ausschließlich für `variant="list"` ergänzt (`{item.source} · Offiziell`
+nur wenn `sourceType === "official"`) — bewusst **nicht** in
+`variant="row"` (Home), um Home garantiert sichtbar unverändert zu
+lassen, wie in der Aufgabe als bevorzugte Option genannt. ZebraTV bleibt
+ohne OFFIZIELL-Label (kein belastbares Feld, das offizielle
+Vereins-Uploads von anderen unterscheidet) — bleibt aber im
+`MSV`-Filter enthalten.
+
+**Empty States:** je Filter ein eigener, dezenter Text (`EMPTY_MESSAGE`
+in `NewsFeed.tsx`), keine Illustrationen.
+
+**Anzahl Items:** `getAggregatedNews()` hat weiterhin **keinen festen
+Cap** — die Summe der drei ungestutzten Source-Ergebnisse (MSV: alle
+Artikel der Übersichtsseite, YouTube: letzte ca. 15 laut Feed, liga3:
+Größe des RSS-Feeds) abzüglich Duplikate. Die Filter arbeiten
+ausschließlich innerhalb dieses bereits vorhandenen Pools, keine
+Pagination.
+
+**Unverändert:** `formatNewsTime()`, `parseGermanDateOnly()`,
+`aggregate.ts::toTimestamp()` (News-Timestamp-Fix bleibt unangetastet),
+MSV-/liga3-Parser, YouTube-Fetch, Encoding-Fix, Bildextraktion,
+Deduplizierung, Sortierung, Home (`variant="row"` unangetastet,
+keine Filter dort), `/spiele`, `/3-liga`, Match Center, Football
+Provider, OpenLigaDB, DFB-Pokal, `tableEngine.ts`/`leagueContext.ts`/
+`multiplex.ts`, BottomNav, Mehr, Debug-Probes.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

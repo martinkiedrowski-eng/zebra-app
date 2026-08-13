@@ -22,6 +22,13 @@ const SOURCE_ICON = {
  *
  * Fehlt ein Bild, wird kein Platzhalter gezeigt — die Karte funktioniert
  * bewusst auch rein textuell gut.
+ *
+ * OFFIZIELL-Kennzeichnung (Product Polish 2B): nur in "list" ergänzt.
+ * Bewusst NICHT in "row" (Home) — Home soll durch diesen Batch sichtbar
+ * unverändert bleiben, die row-Variante ist ohnehin schon auf maximale
+ * Kompaktheit getrimmt (kein Category-Pill dort). sourceType === "official"
+ * ist bereits exklusiv die MSV-Website-Quelle (siehe lib/newsFeed/sources/
+ * msv.ts) — kein neues Feld nötig.
  */
 export function NewsFeedCard({ item, variant = "list" }: { item: NewsFeedItem; variant?: "row" | "list" }) {
   const Icon = SOURCE_ICON[item.sourceType];
@@ -75,6 +82,7 @@ export function NewsFeedCard({ item, variant = "list" }: { item: NewsFeedItem; v
         <Icon size={12} className="flex-shrink-0 text-zebra-blue" aria-hidden="true" />
         <span className="truncate font-text text-[11px] font-medium uppercase tracking-wide text-zebra-blue">
           {item.source}
+          {item.sourceType === "official" && " · Offiziell"}
         </span>
         {item.category && (
           <span className="flex-shrink-0 rounded-pill bg-zebra-blue-dim px-2 py-0.5 font-text text-[10px] font-medium uppercase tracking-wide text-zebra-blue">
