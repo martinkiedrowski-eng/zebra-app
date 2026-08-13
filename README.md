@@ -1065,6 +1065,28 @@ Logik, `NewsFeed.tsx`, `app/news/page.tsx`, News-Aggregation/-Sortierung,
 Deduplizierung, Home, Football/Spiele/3.-Liga/Match Center, BottomNav,
 Mehr, Debug-Probes.
 
+## Mehr Final Polish — Tickets + ZebraShop (Phase 4O)
+
+`app/mehr/page.tsx`: unter „MSV Duisburg" ergänzt um zwei weitere externe
+`NavRow`-Einträge, gleiche Gruppen-Optik wie „Offizielle Website"
+(gemeinsamer `flex flex-col gap-2`-Wrapper, gleiche Card-/Row-Logik,
+gleiche Höhe, gleiche External-Link-Kennzeichnung):
+
+- **Tickets** → `https://www.ticket-onlineshop.com/ols/msv/de`
+  (`Ticket`-Icon aus `lucide-react`, bereits vorhandene Library)
+- **ZebraShop** → `https://www.msv-zebrashop.de/` (`ShoppingBag`-Icon,
+  bewusst „ZebraShop" statt „Fanshop")
+
+Beide URLs wie vorgegeben unverändert übernommen, keine Tracking-
+Parameter ergänzt. `NavRow.tsx` selbst unverändert wiederverwendet —
+deren bestehendes External-Link-Verhalten (`target="_blank"`,
+`rel="noopener noreferrer"`, kein In-App-Browser, keine Redirect-Route)
+gilt automatisch auch für die zwei neuen Einträge, keine neue
+Navigationskomponente gebaut.
+
+**Unverändert:** ZebraTV-Eintrag/-Unterseite, Über ZEBRA, Datenquellen,
+„Offizielle Website"-Eintrag selbst, alle übrigen App-Bereiche.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

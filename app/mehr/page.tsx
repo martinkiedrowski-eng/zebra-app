@@ -1,4 +1,4 @@
-import { Video, Globe, Info, Database } from "lucide-react";
+import { Video, Globe, Info, Database, Ticket, ShoppingBag } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { NavRow } from "@/components/mehr/NavRow";
@@ -26,12 +26,18 @@ export default function MehrPage() {
       <section className="mb-6">
         <SectionHeader title="MSV Duisburg" />
         {/*
-          Nur die offizielle Website ist im Projekt belastbar als echte,
-          bereits verifizierte URL vorhanden (Basis der News-/Debug-
-          Pipeline). Tickets und Fanshop bewusst NICHT ergänzt — dafür
-          liegt keine im Projekt belastbare URL vor, siehe Abschlussbericht.
+          Offizielle Website + Tickets + ZebraShop bilden eine Gruppe
+          (gleiche Card-/Row-Logik, gleiche Höhe, gleiche Typografie,
+          gleiche External-Link-Kennzeichnung über NavRow selbst).
+          Tickets/ZebraShop-URLs stammen von der Aufgabenstellung als
+          offizielle MSV-Ziele — bewusst 1:1 übernommen, keine
+          Tracking-Parameter ergänzt.
         */}
-        <NavRow icon={Globe} label="Offizielle Website" href="https://www.msv-duisburg.de/" external />
+        <div className="flex flex-col gap-2">
+          <NavRow icon={Globe} label="Offizielle Website" href="https://www.msv-duisburg.de/" external />
+          <NavRow icon={Ticket} label="Tickets" href="https://www.ticket-onlineshop.com/ols/msv/de" external />
+          <NavRow icon={ShoppingBag} label="ZebraShop" href="https://www.msv-zebrashop.de/" external />
+        </div>
       </section>
 
       <section>
