@@ -936,6 +936,50 @@ Home-Layout außerhalb der gemeinsamen `NewsFeedCard`, `/spiele`,
 `/3-liga`, Football Provider, DFB-Pokal, Match Center, BottomNav, `/mehr`,
 Designsystem.
 
+## Product Polish 2A — Saisonbilanz + Match-Center-Saisonvergleich (Phase 4L)
+
+**Bestandsanalyse zuerst:** `TableEntry` (`types/table.ts`) hat bereits
+alle benötigten Felder (`wins`/`draws`/`losses`/`points`/`goalsFor`/
+`goalsAgainst`/`position`). Match Center lud über
+`footballDataProvider.getTeamTableEntry()` bereits `homeTableEntry`/
+`awayTableEntry` und rendert sie über eine bereits vorhandene
+`TablePositionCompare`-Komponente — die zeigte bisher nur „Platz N" ohne
+Punkte/Tore/TD. Keine neue Tabellenberechnung nötig, `tableEngine.ts`
+**unverändert**.
+
+**1) MSV-Saisonbilanz (`components/liga/LigaView.tsx`):** neue Card direkt
+unter dem bestehenden MSV-Status, nutzt exakt dasselbe bereits berechnete
+`msvEntry`-Objekt (keine zweite Berechnung). Zeigt „S · U · N" und
+„Tore" — bewusst **ohne** erneute Punkte-Zeile, da die direkt darüber
+liegende MSV-Status-Card das schon zeigt (Redundanz vermieden, wie
+vorgegeben). Saisonlabel `Saison 2026/27` aus `FOOTBALL_CONFIG.season`
+abgeleitet (`config/football.ts`, unverändert, nur gelesen) — keine neue
+Saison-Konfiguration.
+
+**2) Match-Center-Saisonvergleich (`components/matchcenter/
+TeamFormCompare.tsx`):** `TablePositionCompare` erweitert um Punkte, Tore
+und Tordifferenz je Seite, als kompakte zweispaltige „Match Fact"-Card
+(kein HTML-Tabellen-Look). MSV-Seite dezent in Zebra-Blau hervorgehoben
+(Team-Kürzel + Platzzahl), Werte selbst bleiben neutral. **DFB-Pokal-Schutz**
+(`MatchCenterView.tsx`): die Section wird komplett ausgeblendet, wenn
+mindestens eine Seite nicht in der 3.-Liga-Tabelle auflösbar ist (z. B.
+SV Elversberg, 2. Bundesliga) — keine Nullwerte vorgetäuscht, kein
+Raten aus einer falschen Liga. Section-Titel „Tabelle" → „Saisonvergleich"
+präzisiert.
+
+**3) Formdarstellung geprüft, NICHT geändert:** `getTeamForm()` nutzt
+bereits ausschließlich `seasonMatches()` (dieselbe bl3-only Quelle wie
+`getTable()`) — DFB-Pokal-Spiele sind dadurch architektonisch bereits
+ausgeschlossen, ganz ohne zusätzliche Filterung. Funktioniert bereits
+sauber mit 1–4 Spielen, schließt unvollständige Ergebnisse aus, sortiert
+konsistent (newest-first). **Bestehende Implementierung war bereits
+ausreichend — keine Änderung vorgenommen.**
+
+**Unverändert:** `tableEngine.ts`, `leagueContext.ts`, `multiplex.ts`,
+`getTeamForm()`/`FormCurve.tsx`, News-Pipeline/-Timestamp-Fix, `/spiele`,
+DFB-Pokal-Aggregation, OpenLigaDB-Mapping, BottomNav, Mehr, ZebraTV, alle
+Debug-Probes, Home/Batch 1A. Keine neue Live-/Matchday-/Post-Match-Logik.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

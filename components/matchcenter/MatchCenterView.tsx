@@ -141,10 +141,20 @@ export function MatchCenterView({
                 awayForm={awayForm}
               />
             </section>
-            <section>
-              <SectionHeader title="Tabelle" />
-              <TablePositionCompare homeEntry={homeTableEntry} awayEntry={awayTableEntry} />
-            </section>
+            {/*
+              DFB-Pokal-Schutz: der Saisonvergleich basiert ausschließlich
+              auf der 3.-Liga-Tabelle (getTeamTableEntry). Bei einem
+              Pokalgegner außerhalb der 3. Liga (z.B. SV Elversberg, 2.
+              Bundesliga) liefert das `null` — dann komplett ausblenden,
+              statt Nullwerte vorzutäuschen oder aus einer falschen Liga
+              zu raten.
+            */}
+            {homeTableEntry && awayTableEntry && (
+              <section>
+                <SectionHeader title="Saisonvergleich" />
+                <TablePositionCompare homeEntry={homeTableEntry} awayEntry={awayTableEntry} />
+              </section>
+            )}
             {hasAvailabilityData && (
               <section>
                 <SectionHeader title="Personallage" />

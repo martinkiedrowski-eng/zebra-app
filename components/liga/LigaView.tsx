@@ -15,6 +15,7 @@ import { buildMsvLageContext } from "@/lib/leagueContext";
 import { prioritizeMultiplex } from "@/lib/multiplex";
 import { MSV_TEAM_ID } from "@/lib/constants";
 import { formatMatchdayDateRange } from "@/lib/format";
+import { FOOTBALL_CONFIG } from "@/config/football";
 
 type Tab = "tabelle" | "spieltag";
 type DevState = "normal" | "multiplex";
@@ -202,6 +203,24 @@ export function LigaView({
                     {msvContext.headline}
                   </p>
                 )}
+              </div>
+
+              {/*
+                Saisonbilanz: bewusst dieselben msvEntry-Felder wie oben,
+                keine zweite Berechnung. "Punkte" erscheint hier absichtlich
+                NICHT noch einmal (steht bereits in MSV-Status direkt
+                darüber) — nur S/U/N und Tore, um Redundanz zu vermeiden.
+              */}
+              <div className="mt-3 rounded-card border border-zebra-border bg-zebra-surface p-4">
+                <p className="font-text text-[11px] font-medium uppercase tracking-wide text-zebra-mute">
+                  Saison {FOOTBALL_CONFIG.season}/{String(FOOTBALL_CONFIG.season + 1).slice(-2)}
+                </p>
+                <p className="mt-1.5 font-mono text-sm font-medium text-zebra-ice">
+                  {msvEntry.wins} S · {msvEntry.draws} U · {msvEntry.losses} N
+                </p>
+                <p className="mt-1 font-mono text-sm text-zebra-mute">
+                  {msvEntry.goalsFor}:{msvEntry.goalsAgainst} Tore
+                </p>
               </div>
             </div>
           )}
