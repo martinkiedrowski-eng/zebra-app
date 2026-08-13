@@ -881,6 +881,61 @@ tatsächlichen Ursache über den Probe. `format.ts`, `msvParser.ts`,
 `msv.ts`, `aggregate.ts` sowie liga3-online/ZebraTV/Dedup/Encoding-Fix
 komplett unverändert.
 
+## News-Timestamp-Bug: Root Cause gefunden und behoben (Phase 4K)
+
+Über `/debug/news-dates` live bestätigt: `computed publishedAt` für die
+betroffenen Meldungen war korrekt `"11.08.2026"`/`"10.08.2026"` — das
+Problem lag ausschließlich in `formatNewsTime()` (und identisch in
+`aggregate.ts::toTimestamp()` für die Sortierung).
+
+**Root Cause:** `Date.parse("11.08.2026")` liefert in der echten
+Laufzeitumgebung **kein** `NaN` (anders als ursprünglich angenommen,
+siehe letzte Phase). Der bisherige Code rief `Date.parse(publishedAt)`
+zuerst unconditional auf und prüfte erst danach `Number.isNaN(parsed)`,
+um zu entscheiden, ob der eigene, sichere `parseGermanDateOnly()`-
+Fallback greifen sollte. Weil `Date.parse()` für dieses Format
+"erfolgreich" — nur eben falsch, mit einem Ergebnis nahe der aktuellen
+Zeit — zurückkehrte, wurde der `NaN`-Zweig nie erreicht. Der Fallback war
+faktisch toter Code.
+
+**Fix in `lib/newsFeed/format.ts`:** Das `DD.MM.YYYY`-Muster wird jetzt
+**zuerst und ausschließlich** über den eigenen, deterministischen Parser
+erkannt — der generische `Date.parse()`-Pfad kommt für dieses Format gar
+nicht mehr zum Zug. `parseGermanDateOnly()` validiert zusätzlich das
+Kalenderdatum selbst (lehnt z. B. „31.02." jetzt ab, statt es
+stillschweigend in den März rollen zu lassen) und ist jetzt exportiert.
+Die relative Anzeige für reine Datums-Werte rechnet neu in **ganzen
+Kalendertagen** (`Europe/Berlin`, über `Intl.DateTimeFormat`, unabhängig
+von der tatsächlichen Server-Zeitzone) statt in
+Millisekunden-Differenz zur aktuellen Uhrzeit — sonst hätte die
+Rundung je nach Tageszeit zu falschen Werten geführt (z. B. „vor 3 Tg"
+statt korrekt „vor 2 Tg" für ein Datum von vorgestern, geprüft am
+Nachmittag). Ein Artikel von heute zeigt neu `"heute"` (kein bestehender
+Tier passte, „gerade eben" wäre falsch gewesen, da für ein reines Datum
+keine Uhrzeit bekannt ist).
+
+**Fix in `lib/newsFeed/aggregate.ts::toTimestamp()`:** identischer
+Root-Cause-Bug war dort ebenfalls vorhanden (`Date.parse()` zuerst,
+DD.MM.YYYY-Fallback faktisch unerreichbar) — jetzt behoben durch
+Wiederverwendung desselben, jetzt exportierten `parseGermanDateOnly()`
+aus `format.ts` (eine Wahrheit, keine zweite Kopie der Parsing-Logik).
+Ein `DD.MM.YYYY`-Artikel kann dadurch nicht mehr fälschlich wie gerade
+veröffentlicht einsortiert werden.
+
+**Getestet** (Node-Simulation mit fixiertem „jetzt" = 13.08.2026): alle
+in der Aufgabenstellung geforderten Fälle bestehen exakt —
+`11.08.2026`→„vor 2 Tg", `10.08.2026`→„vor 3 Tg", `08.08.2026`→„vor 5 Tg",
+`13.08.2026`→„heute", `12.08.2026`→„vor 1 Tg", valide ISO-Werte
+unverändert korrekt, `undefined`/`""`/ungültiger String/ungültiges
+Kalenderdatum (`31.02.2026`) → kein Zeitstempel.
+
+**Unverändert:** die bestehende Min/Std/Tg/Datum-Logik für vollständige
+ISO-Zeitwerte, alle anderen News-Quellen (liga3-online, ZebraTV/YouTube),
+Deduplizierung, Bilder, Teaser, `/debug/news-dates` (bleibt bestehen),
+Home-Layout außerhalb der gemeinsamen `NewsFeedCard`, `/spiele`,
+`/3-liga`, Football Provider, DFB-Pokal, Match Center, BottomNav, `/mehr`,
+Designsystem.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

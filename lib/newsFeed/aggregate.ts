@@ -2,6 +2,7 @@ import { NewsFeedItem } from "@/types/newsFeed";
 import { fetchMsvNews } from "./sources/msv";
 import { fetchYoutubeNews } from "./sources/youtube";
 import { fetchLiga3News } from "./sources/liga3";
+import { parseGermanDateOnly } from "./format";
 
 /**
  * Führt alle drei Quellen zusammen. Jede Quelle läuft unabhängig über
@@ -61,24 +62,26 @@ function normalizeTitle(title: string): string {
     .trim();
 }
 
-/** Robuste Zeitstempel-Ableitung für die Sortierung — nie erfundene Werte, nur geparst. */
+/**
+ * Robuste Zeitstempel-Ableitung für die Sortierung — nie erfundene Werte,
+ * nur geparst.
+ *
+ * Derselbe Root-Cause-Bug wie in lib/newsFeed/format.ts (siehe dortiger
+ * Kommentar): `Date.parse("11.08.2026")` liefert in der echten
+ * Laufzeitumgebung KEIN NaN, sondern einen falsch interpretierten, nah-
+ * aktuellen Wert. Das eindeutige DD.MM.YYYY-Muster wird deshalb jetzt
+ * IMMER zuerst über den gemeinsamen, deterministischen Parser behandelt
+ * (parseGermanDateOnly aus format.ts) — der generische Date.parse()-Pfad
+ * kommt für dieses Format gar nicht mehr zum Zug. Dadurch kann ein
+ * DD.MM.YYYY-Artikel nicht mehr fälschlich wie gerade veröffentlicht
+ * einsortiert werden.
+ */
 function toTimestamp(value: string): number {
   if (!value) return 0;
 
+  const dateOnlyMs = parseGermanDateOnly(value);
+  if (dateOnlyMs !== null) return dateOnlyMs;
+
   const iso = Date.parse(value);
-  if (!Number.isNaN(iso)) return iso;
-
-  // Fallback: "DD.MM.YYYY" (msv-duisburg.de-Textmuster ohne datetime-Attribut)
-  const match = value.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
-  if (match) {
-    const dd = match[1];
-    const mm = match[2];
-    const yyyy = match[3];
-    if (dd && mm && yyyy) {
-      const parsed = Date.parse(`${yyyy}-${mm}-${dd}T00:00:00`);
-      if (!Number.isNaN(parsed)) return parsed;
-    }
-  }
-
-  return 0;
+  return Number.isNaN(iso) ? 0 : iso;
 }
