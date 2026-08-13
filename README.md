@@ -1087,6 +1087,48 @@ Navigationskomponente gebaut.
 **Unverändert:** ZebraTV-Eintrag/-Unterseite, Über ZEBRA, Datenquellen,
 „Offizielle Website"-Eintrag selbst, alle übrigen App-Bereiche.
 
+## ZEBRA 1.0 — Release Polish & Cleanup (Phase 4P)
+
+**1) Aufstieg/Relegation in der 3.-Liga-Tabelle:** `components/liga/
+LeagueTable.tsx` — bewusst NICHT aus Daten abgeleitet und NICHT über
+`tableEngine.ts`/`entry.zone` (der aktuell Plätze 1–3 einheitlich als
+`"promotion"` markiert, da `FOOTBALL_CONFIG.promotionSpots = 3`).
+Stattdessen eine reine UI-Anzeigeregel direkt in der Tabellenkomponente:
+Platz 1–2 → „Aufstieg", Platz 3 → „Relegation" (nutzt den in `types/
+table.ts` bereits vorgesehenen, bisher nie verwendeten Zone-Wert
+`"relegation-playoff"` konzeptionell, aber rein lokal in der
+Komponente — kein neuer Wert im echten `TableEntry.zone`-Feld). Die
+bestehende Abstiegszone (`entry.zone === "relegation"`, unverändert von
+`tableEngine.ts` berechnet) bleibt exakt wie zuvor. `tableEngine.ts`
+selbst, Tabellenwerte und Sortierung: **unverändert**.
+
+**2) 🦓 ZEBRA 1.0 unter „Mehr":** `app/mehr/page.tsx` — dezenter, zentrierter
+Footer-Abschluss unterhalb von „Datenquellen", deutlich kleiner als die
+Section-Headlines, kein neuer Menüpunkt. `lucide-react` besitzt kein
+echtes Zebra-Icon (nur generische Tier-Icons wie PawPrint/Cat/Dog) —
+bewusst nicht durch ein unpassendes Icon ersetzt, stattdessen das
+Unicode-Zebra „🦓" wie vorgegeben.
+
+**3) Debug-/Reality-Check-Cleanup:** kompletter `app/debug/`-Ordner
+entfernt — `/debug/competitions`, `/debug/content-sources` (inkl.
+`_probe/`-Unterordner), `/debug/matchday`, `/debug/news-dates`,
+`/debug/squad-attendance-sources`, `/debug/stats-sources`. Vor dem
+Löschen geprüft: **keine produktive Datei importiert aus `app/debug/`**
+(der MSV-Parser wurde bereits in einer früheren Phase bewusst an seinen
+produktiven Ort `lib/newsFeed/parsers/msvParser.ts` verschoben, genau
+damit der Debug-Probe von der Produktion abhängt und nicht umgekehrt —
+das zahlt sich hier aus). Vollständiger Projekt-Strict-Check nach dem
+Löschen bestätigt: keine kaputten Imports, keine Regression. Historische
+README-Abschnitte zu den einzelnen Reality-Check-Phasen (3H/3M/4F/4G/4J
+u. a.) bleiben als Projekt-Historie bestehen, auch wenn die jeweilige
+Debug-Route inzwischen entfernt ist.
+
+**Unverändert:** Home, News-Feed/-Filter, Spiele-Aggregation,
+DFB-Pokal-Integration, Match Center, Formberechnung, Saisonvergleich,
+Spieltagsnavigation, Datums-/Zeitformatierung, `tableEngine.ts`,
+OpenLigaDB-Provider, News-Parser, Bottom Navigation, bestehende Links
+unter „Mehr", PWA-Konfiguration, Designsystem.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

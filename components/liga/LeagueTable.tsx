@@ -1,5 +1,27 @@
 import { TableEntry } from "@/types/table";
 
+/**
+ * V1.0-Release-Regel (bewusst NICHT aus Daten abgeleitet, siehe Vorgabe):
+ * Platz 1–2 = Aufstieg, Platz 3 = Relegation — reine UI-Anzeigeregel,
+ * unabhängig von tableEngine.ts/entry.zone. Die bestehende Abstiegszone
+ * (entry.zone === "relegation", von tableEngine.ts berechnet) bleibt
+ * davon komplett unberührt und wird weiterhin unverändert übernommen.
+ */
+type DisplayZone = "aufstieg" | "relegation-platz" | "abstieg" | null;
+
+function displayZoneFor(entry: TableEntry): DisplayZone {
+  if (entry.position <= 2) return "aufstieg";
+  if (entry.position === 3) return "relegation-platz";
+  if (entry.zone === "relegation") return "abstieg";
+  return null;
+}
+
+const ZONE_LABEL: Record<Exclude<DisplayZone, null>, string> = {
+  aufstieg: "Aufstieg",
+  "relegation-platz": "Relegation",
+  abstieg: "Abstieg",
+};
+
 export function LeagueTable({ entries }: { entries: TableEntry[] }) {
   return (
     <div className="overflow-hidden rounded-card border border-zebra-border bg-zebra-surface">
@@ -17,14 +39,17 @@ export function LeagueTable({ entries }: { entries: TableEntry[] }) {
       </div>
 
       {entries.map((entry, i) => {
-        const isZoneBorder = i > 0 && entry.zone && entries[i - 1]?.zone !== entry.zone;
+        const zone = displayZoneFor(entry);
+        const prevEntry = i > 0 ? entries[i - 1] : undefined;
+        const prevZone = prevEntry ? displayZoneFor(prevEntry) : null;
+        const isZoneBorder = i > 0 && zone !== null && zone !== prevZone;
 
         return (
           <div key={entry.teamId}>
-            {isZoneBorder && (
+            {isZoneBorder && zone && (
               <div className="flex items-center gap-2 border-t border-zebra-border px-3 py-1">
                 <span className="font-text text-[10px] uppercase tracking-wide text-zebra-mute-2">
-                  {entry.zone === "relegation" ? "Abstieg" : entry.zone === "promotion" ? "Aufstieg" : ""}
+                  {ZONE_LABEL[zone]}
                 </span>
               </div>
             )}

@@ -47,6 +47,22 @@ export default function MehrPage() {
           <NavRow icon={Database} label="Datenquellen" href="/mehr/datenquellen" />
         </div>
       </section>
+
+      {/*
+        Kein "Aufstiegs"-Menüpunkt, nur ein ruhiger Versionsabschluss.
+        lucide-react besitzt kein tatsächliches Zebra-Icon (nur generische
+        Tier-Icons wie PawPrint/Cat/Dog) — bewusst NICHT durch ein
+        unpassendes generisches Tier-Icon ersetzt, stattdessen das
+        Unicode-Zebra "🦓" wie vorgegeben.
+      */}
+      <div className="mt-10 flex flex-col items-center gap-1 pb-2">
+        <span aria-hidden="true" className="text-lg leading-none">
+          🦓
+        </span>
+        <span className="font-text text-[10px] font-medium uppercase tracking-wide text-zebra-mute">
+          Zebra 1.0
+        </span>
+      </div>
     </AppShell>
   );
 }
