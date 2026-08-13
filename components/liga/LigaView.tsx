@@ -14,6 +14,7 @@ import { computeLiveTable, getTeamLiveContext } from "@/lib/tableEngine";
 import { buildMsvLageContext } from "@/lib/leagueContext";
 import { prioritizeMultiplex } from "@/lib/multiplex";
 import { MSV_TEAM_ID } from "@/lib/constants";
+import { formatMatchdayDateRange } from "@/lib/format";
 
 type Tab = "tabelle" | "spieltag";
 type DevState = "normal" | "multiplex";
@@ -58,7 +59,16 @@ export function LigaView({
     return teamContext ? buildMsvLageContext(teamContext) : null;
   }, [liveTable, baselineTable]);
 
+  // Nur bereits vorhandene, mathematisch sichere Tabellenfelder — keine
+  // neue Berechnung, keine Prognose.
+  const msvEntry = liveTable.find((e) => e.teamId === MSV_TEAM_ID) ?? null;
+
   const multiplexEntries = useMemo(() => prioritizeMultiplex(matches, baselineTable), [matches, baselineTable]);
+
+  const matchdayDateRange = useMemo(
+    () => formatMatchdayDateRange(browsedMatches.map((m) => m.kickoff)),
+    [browsedMatches]
+  );
 
   const atMin = browsedMatchday <= matchdayRange.min;
   const atMax = browsedMatchday >= matchdayRange.max;
@@ -150,6 +160,11 @@ export function LigaView({
               )}
               <span className="font-display text-sm font-bold uppercase tracking-wide text-zebra-ice">
                 {browsedMatchday}. Spieltag
+                {matchdayDateRange && (
+                  <span className="ml-2 font-text text-xs font-normal normal-case tracking-normal text-zebra-mute">
+                    {matchdayDateRange}
+                  </span>
+                )}
               </span>
               {atMax ? (
                 <span className="p-1.5 text-zebra-mute-2">
@@ -170,10 +185,24 @@ export function LigaView({
 
           {isViewingCurrentMatchday && hasLiveMatches && <LiveMultiplex entries={multiplexEntries} />}
 
-          {isViewingCurrentMatchday && msvContext && (
+          {msvEntry && (
             <div>
-              <SectionHeader title="Spieltag für den MSV" />
-              <ContextCard headline={msvContext.headline} direction={msvContext.direction} />
+              <SectionHeader title="MSV-Status" />
+              <div className="rounded-card border border-zebra-border bg-zebra-surface p-4">
+                <p className="font-display text-lg font-bold uppercase tracking-wide text-zebra-ice">
+                  {msvEntry.position}. Platz
+                </p>
+                <p className="mt-1 font-mono text-sm text-zebra-mute">
+                  {msvEntry.points} {msvEntry.points === 1 ? "Punkt" : "Punkte"} ·{" "}
+                  {msvEntry.goalsFor - msvEntry.goalsAgainst > 0 ? "+" : ""}
+                  {msvEntry.goalsFor - msvEntry.goalsAgainst} Tordifferenz
+                </p>
+                {msvContext && (
+                  <p className="mt-3 border-t border-zebra-border pt-3 font-text text-sm text-zebra-ice">
+                    {msvContext.headline}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>

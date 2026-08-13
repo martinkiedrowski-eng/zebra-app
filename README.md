@@ -830,6 +830,24 @@ jetzt `(FormMatch | null)[]` statt nur `FormMatch[]` und rendert für
 alle OpenLigaDB-Mapping-Dateien, `/spiele`, `/3-liga`, Match Center, News,
 Mehr, ZebraTV, Bottom Navigation, alle Debug-Probes, Live-/Matchday-Logik.
 
+## Product Polish Batch 1B — 3. Liga UX + News-Zeitformat (Phase 4I, Verifikation)
+
+Beim Bestands-Check zu Beginn dieses Batches (wie vorgegeben) zeigte sich:
+**alle Punkte dieses Batches waren bereits vollständig im Code umgesetzt**
+— `lib/relevantMatchday.ts` (automatische Spieltags-Relevanz),
+`formatMatchdayDateRange()`/`formatDayGroupKey()`/`formatDayGroupLabel()`
+in `lib/format.ts`, die Tagesgruppierung + entfernte
+„Bevorstehend"-Pille in `MatchdayList.tsx`, die bereits umbenannte
+„MSV-Status"-Sektion in `LigaView.tsx` sowie die zentrale
+`formatNewsTime()` in `lib/newsFeed/format.ts` (inkl. eines defensiven
+Fallback-Parsers für das deutsche `DD.MM.YYYY`-Format ohne Uhrzeit —
+genau die Ursache der zuvor beobachteten Inkonsistenz „vor 22 Std" neben
+rohem „11.08.2026"). Ich habe deshalb **keinen Code verändert**, sondern
+den vorhandenen Stand gegen alle Anforderungen und Edge Cases dieses
+Batches geprüft (siehe Abschlussbericht im Chat) und einen erneuten
+TypeScript-Strict-Check über den gesamten betroffenen Bestand
+durchgeführt.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

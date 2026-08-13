@@ -2,6 +2,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { LigaView } from "@/components/liga/LigaView";
 import { footballDataProvider, IS_MOCK_MODE } from "@/providers/registry";
 import { MOCK_MATCHDAY_MATCHES } from "@/mock/league";
+import { determineRelevantMatchday } from "@/lib/relevantMatchday";
+import type { MatchdayResult } from "@/providers/football/FootballDataProvider";
 
 // Server Component: Basistabelle (VOR dem aktuellen Spieltag) und der
 // aktuelle Spieltag kommen über den FootballDataProvider — identisch für
@@ -9,10 +11,19 @@ import { MOCK_MATCHDAY_MATCHES } from "@/mock/league";
 // Mock-only-Werkzeug (siehe LigaView): im openligadb-Modus gibt es keine
 // künstliche zweite Variante, nur den tatsächlichen aktuellen Spieltag.
 //
-// Spieltagsnavigation (Polish-Pass): der durchblätterte Spieltag wird
-// über den URL-Query-Parameter ?spieltag=N gesteuert (kein Client-seitiger
-// Re-Fetch nötig) und ist strikt von der Tabelle/Live-Tabelle getrennt,
-// die weiterhin ausschließlich den TATSÄCHLICH aktuellen Spieltag abbildet.
+// Spieltagsnavigation: der durchblätterte Spieltag wird über den
+// URL-Query-Parameter ?spieltag=N gesteuert und ist strikt von der
+// Tabelle/Live-Tabelle getrennt, die weiterhin ausschließlich den
+// TATSÄCHLICH aktuellen Spieltag abbildet (siehe `matchday`-Prop in
+// LigaView, unverändert).
+//
+// Product Audit Batch 1B: OHNE ?spieltag= wird jetzt nicht mehr blind der
+// von OpenLigaDB gemeldete "aktuelle" Spieltag übernommen, sondern über
+// lib/relevantMatchday.ts::determineRelevantMatchday() defensiv geprüft,
+// ob dieser bereits vollständig abgeschlossen ist — falls ja, wird
+// schrittweise (max. 3 zusätzliche Abrufe über die bereits bestehende
+// getMatchday()-Methode, keine neue Fetch-Architektur) der nächste noch
+// offene Spieltag gesucht, sonst der letzte verfügbare gezeigt.
 export default async function DritteLigaPage({
   searchParams,
 }: {
@@ -25,14 +36,19 @@ export default async function DritteLigaPage({
   ]);
 
   const requested = searchParams.spieltag ? Number.parseInt(searchParams.spieltag, 10) : NaN;
-  const browsedMatchday = Number.isFinite(requested)
-    ? Math.min(Math.max(requested, matchdayRange.min), matchdayRange.max)
-    : currentMatchdayResult.matchday;
 
-  const browsedMatchdayResult =
-    browsedMatchday === currentMatchdayResult.matchday
-      ? currentMatchdayResult
-      : await footballDataProvider.getMatchday(browsedMatchday);
+  let browsedMatchdayResult: MatchdayResult;
+  if (Number.isFinite(requested)) {
+    const clamped = Math.min(Math.max(requested, matchdayRange.min), matchdayRange.max);
+    browsedMatchdayResult =
+      clamped === currentMatchdayResult.matchday
+        ? currentMatchdayResult
+        : await footballDataProvider.getMatchday(clamped);
+  } else {
+    browsedMatchdayResult = await determineRelevantMatchday(currentMatchdayResult, matchdayRange, (n) =>
+      footballDataProvider.getMatchday(n)
+    );
+  }
 
   return (
     <AppShell>
