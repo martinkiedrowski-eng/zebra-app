@@ -848,6 +848,39 @@ Batches geprüft (siehe Abschlussbericht im Chat) und einen erneuten
 TypeScript-Strict-Check über den gesamten betroffenen Bestand
 durchgeführt.
 
+## News-Timestamp-Bug: Reality Check statt Blindfix (Phase 4J)
+
+Vollständigen Codepfad gelesen (`msvParser.ts` → `msv.ts` → `aggregate.ts`
+→ `format.ts` → `NewsFeedCard.tsx`): **keine** `Date.now()`/`new Date()`-
+Fallback-Stelle gefunden — die ursprünglich naheliegende Hypothese
+("leeres/ungültiges Datum wird stillschweigend zu 'jetzt'") lässt sich im
+Code nicht bestätigen. Starkes Gegenindiz zusätzlich: `aggregate.ts::
+toTimestamp("")` liefert `0` (Epoch) — ein leeres `publishedAt` würde die
+Meldung ans Ende der Sortierung schieben, nicht an den Anfang. Da die
+betroffenen `#fcwmsv`/`#msvvereint`-Meldungen laut Beobachtung ganz oben
+stehen, muss ein echter, nah-aktueller Zeitwert ankommen — vermutlich,
+weil die Quelle (msv-duisburg.de) für diese offenbar hashtag-/
+Social-Embed-artigen Teaser bei jedem Seitenaufruf ein aktuelles
+`<time datetime>` rendert, keinen festen Artikel-Zeitpunkt. Das ist eine
+begründete Hypothese, **keine bestätigte Ursache** — deshalb kein
+Blindfix.
+
+**Neuer, isolierter Debug-Probe:** `/debug/news-dates`
+(`app/debug/news-dates/page.tsx`, `noindex`, `force-dynamic`). Zeigt pro
+MSV-Artikel getrennt: rohes `<time datetime>`-Attribut, roher sichtbarer
+`<time>`-Text, roher `DD.MM.YYYY`-Texttreffer, daraus berechnetes
+`publishedAt` sowie das tatsächliche `formatNewsTime()`-Ergebnis —
+insbesondere für Items mit „#"-Kategorie-Präfix (also `#fcwmsv`,
+`#msvvereint`) im Vergleich zu normalen Artikeln. Nutzt bewusst eine
+**eigene, rein diagnostische** DOM-Auswertung statt den produktiven
+`msvParser.ts` zu erweitern — der bleibt dadurch exakt unverändert und
+bleibt die einzige Wahrheit für die echte Extraktion.
+
+**Kein Fix implementiert** — wie vorgegeben erst nach Bestätigung der
+tatsächlichen Ursache über den Probe. `format.ts`, `msvParser.ts`,
+`msv.ts`, `aggregate.ts` sowie liga3-online/ZebraTV/Dedup/Encoding-Fix
+komplett unverändert.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
