@@ -1033,6 +1033,38 @@ keine Filter dort), `/spiele`, `/3-liga`, Match Center, Football
 Provider, OpenLigaDB, DFB-Pokal, `tableEngine.ts`/`leagueContext.ts`/
 `multiplex.ts`, BottomNav, Mehr, Debug-Probes.
 
+## Product Polish 2B.1 — News-Filter geschärft (Phase 4N)
+
+**Ursache geprüft, kein technischer Bug:** `isMsvRelevant()` (`lib/
+newsFeed/filters.ts`) schloss `sourceType === "video"` bisher
+unconditional in den `MSV`-Filter ein. Da ZebraTV und offizielle
+MSV-News vermutlich den Großteil des aggregierten Feeds ausmachen und
+nur eine kleine Teilmenge der liga3-online-Artikel keinen MSV-Bezug hat,
+wirkten `Alle` und `MSV` dadurch fast identisch — der Filter arbeitete
+exakt wie codiert, war produktseitig nur zu breit definiert.
+
+**Fix:** ZebraTV (`sourceType === "video"`) explizit aus `MSV`
+ausgeschlossen — hat mit `Videos` bereits einen eigenen, jetzt klar
+getrennten Filter. `MSV` enthält jetzt ausschließlich offizielle
+MSV-News (`sourceType === "official"`) und externe redaktionelle
+liga3-Artikel mit eindeutigem MSV-/Duisburg-Bezug (unverändertes
+Wortgrenzen-Matching). Mit Node-Simulation gegen alle in der Aufgabe
+genannten Fälle getestet — alle bestehen, inklusive „Hansa Rostock
+verpflichtet..." (kein Bezug → nur `Alle`) und „Duisburg naht als
+Gegner" im Teaser (→ weiterhin `MSV`).
+
+**Diagnose-Zahlen:** Ich habe keinen Live-Zugriff auf den echten
+aggregierten Feed in dieser Sandbox — die im Abschlussbericht genannten
+Zahlen (Punkt 9/10 der Aufgabe) kann ich deshalb ehrlich nicht aus
+echten Daten liefern, nur die Filterlogik selbst mit konstruierten
+Testfällen bestätigen. Keine neue Debug-Seite gebaut, wie gewünscht.
+
+**Unverändert:** `OFFIZIELL`-Label, `filterNewsFeed()`/`Alle`/`Videos`-
+Logik, `NewsFeed.tsx`, `app/news/page.tsx`, News-Aggregation/-Sortierung,
+`formatNewsTime()`/`parseGermanDateOnly()`, Parser, Source-Adapter,
+Deduplizierung, Home, Football/Spiele/3.-Liga/Match Center, BottomNav,
+Mehr, Debug-Probes.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
