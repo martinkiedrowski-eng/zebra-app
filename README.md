@@ -1129,6 +1129,28 @@ Spieltagsnavigation, Datums-/Zeitformatierung, `tableEngine.ts`,
 OpenLigaDB-Provider, News-Parser, Bottom Navigation, bestehende Links
 unter „Mehr", PWA-Konfiguration, Designsystem.
 
+## ZebraTV-Videos fehlen — Debug-Probe statt Blindfix (Phase 4Q)
+
+Live-Beobachtung: `/news` zeigt beim Filter „Videos" keine ZebraTV-Items
+mehr. Vollständigen Codepfad gelesen (`youtube.ts`, `xmlUtils.ts`,
+`fetchUtils.ts`, `aggregate.ts`, `filters.ts`, `NewsFeed.tsx`,
+`app/mehr/zebratv/page.tsx`) — **kein statischer Bug gefunden**.
+Aggregation, Deduplizierung, Sortierung und der `MSV`/`Videos`-Filter
+prüfen `sourceType === "video"` überall korrekt; `/mehr/zebratv` ruft
+`fetchYoutubeNews()` sogar direkt auf, ganz ohne Aggregator/Filter
+dazwischen. Ob das Problem beim Fetch selbst (z. B. YouTube blockiert die
+Vercel-IP/den User-Agent inzwischen), bei der XML-Erkennung oder erst
+später liegt, lässt sich ohne Live-Daten nicht bestimmen — deshalb **kein
+Blindfix**, stattdessen der isolierte Debug-Probe `/debug/youtube-feed`
+(`app/debug/youtube-feed/page.tsx`, `noindex`, `force-dynamic`, keine
+Secrets). Zeigt getrennt: A) roher Fetch (HTTP-Status, Content-Type,
+Response-Länge — unabhängig vom Produktionscode, damit auch ein
+Fehlschlag sichtbar bleibt, den `fetchWithTimeout()` im Fehlerfall
+bewusst verschluckt), B) XML-Erkennung + Entry-Zahl auf dieser rohen
+Antwort, C) das tatsächliche Ergebnis der echten, unveränderten
+`fetchYoutubeNews()`, D) das Ergebnis der echten, unveränderten
+`getAggregatedNews()` inkl. Video-Anzahl. Kein Produktionscode verändert.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
