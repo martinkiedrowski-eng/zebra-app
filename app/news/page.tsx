@@ -9,11 +9,25 @@ import { getAggregatedNews } from "@/lib/newsFeed/aggregate";
 // Einträge; technische Details dazu stehen ausschließlich unter
 // /debug/content-sources, nicht hier.
 //
+// force-dynamic (ZEBRA-1.0-Regressionsfix): diese Route nutzt keine
+// dynamischen APIs, wäre also für Next.js' Full Route Cache/statische
+// Generierung berechtigt gewesen — die Seite hätte dann nur EINMAL (beim
+// Build bzw. ersten Request) gerendert und dieses Ergebnis gecacht werden
+// können. Landete dabei ein leerer/fehlgeschlagener YouTube-Fetch im
+// Snapshot, blieb "keine Videos" dauerhaft hängen, obwohl der eigentliche
+// Adapter (lib/newsFeed/sources/youtube.ts, unverändert) live nachweislich
+// funktioniert (siehe /debug/youtube-feed). force-dynamic erzwingt echtes
+// Server-Rendering bei jedem Request — die einzelnen fetch()-Aufrufe in
+// den Source-Adaptern behalten ihr eigenes `next: { revalidate: 300 }`
+// (Next.js Data Cache), das bleibt unverändert.
+//
 // Filter (Product Polish 2B): der komplette Feed wird weiterhin genau
 // einmal hier geladen und unverändert an die Client-Komponente NewsFeed
 // durchgereicht — Alle/MSV/Videos filtern rein lokal auf diesem bereits
 // vorhandenen Array, kein zweiter Aggregator-Aufruf, kein erneuter Fetch
 // beim Tabwechsel.
+export const dynamic = "force-dynamic";
+
 export default async function NewsPage() {
   const items = await getAggregatedNews();
 

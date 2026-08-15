@@ -1151,6 +1151,43 @@ Antwort, C) das tatsächliche Ergebnis der echten, unveränderten
 `fetchYoutubeNews()`, D) das Ergebnis der echten, unveränderten
 `getAggregatedNews()` inkl. Video-Anzahl. Kein Produktionscode verändert.
 
+## ZEBRA 1.0 — ZebraTV-Regression behoben + Live-Matchday-Probe wiederhergestellt (Phase 4R)
+
+**ZebraTV-Bug — Root Cause bestätigt:** Der Live-Befund von
+`/debug/youtube-feed` (HTTP 200, 15 Items, `fetchYoutubeNews()` und
+`getAggregatedNews()` beide nachweislich korrekt) zeigte: die
+Datenpipeline war komplett gesund, trotzdem sahen `/news` und
+`/mehr/zebratv` 0 Videos. Ursache: weder `app/news/page.tsx` noch
+`app/mehr/zebratv/page.tsx` hatten `export const dynamic =
+"force-dynamic"` — im Gegensatz zum Debug-Probe. Da beide Seiten keine
+dynamischen APIs nutzen, war Next.js berechtigt, sie als statische Route
+zu behandeln und einmalig zu rendern/cachen; landete dabei ein
+leerer/fehlgeschlagener YouTube-Fetch im Snapshot, blieb „keine Videos"
+dauerhaft hängen. **Fix:** `export const dynamic = "force-dynamic"` in
+beiden Dateien ergänzt — erzwingt echtes Server-Rendering pro Request.
+Die einzelnen `fetch()`-Aufrufe in den Source-Adaptern behalten ihr
+eigenes `next: { revalidate: 300 }` (Next.js Data Cache) unverändert.
+**Kein** Parser-, Aggregator-, Dedup-, Sortier- oder Filter-Code
+verändert. `/debug/youtube-feed` bleibt wie gewünscht vorerst bestehen,
+zum direkten Vergleich nach dem Fix.
+
+**Live-Matchday-Debug-Probe wiederhergestellt:** `/debug/matchday`
+(`app/debug/matchday/page.tsx`, `noindex`, `force-dynamic`, alle
+Roh-Fetches `cache: "no-store"`) — deutlich erweitert gegenüber der im
+V1.0-Cleanup entfernten Vorversion. Zeigt: Abrufzeitpunkt
+(Europe/Berlin + ISO), rohe OpenLigaDB-Matchday-Daten (inkl. roher
+Top-Level- und Goal-Keys eines Beispiel-Livespiels), die normalisierten
+Daten über das unveränderte `footballDataProvider.getCurrentMatchday()`
+direkt daneben, einen expliziten Live-Match-Fokus (`LIVE MATCHES FOUND:
+X`, Status ausschließlich aus dem bereits bestehenden `mapStatus.ts`-
+Ergebnis, keine Ableitung aus der Kickoff-Zeit), Live-Tabelle über das
+unveränderte `lib/tableEngine.ts`, Multiplex über das unveränderte
+`lib/multiplex.ts`, sowie eine explizite `CURRENT MATCH MINUTE
+AVAILABLE: JA/NEIN`-Prüfung, die die real vorhandenen Top-Level-Keys
+nach „Minute" durchsucht, statt einen Feldnamen zu raten. `tableEngine.ts`,
+`leagueContext.ts`, `multiplex.ts` und der OpenLigaDB-Mapper wurden dafür
+ausschließlich importiert/gelesen, nicht verändert.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

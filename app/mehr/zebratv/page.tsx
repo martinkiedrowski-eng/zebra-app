@@ -9,6 +9,11 @@ import { fetchYoutubeNews } from "@/lib/newsFeed/sources/youtube";
 // Rendering über die bereits bestehende NewsFeedCard-Komponente (variant
 // "list"), dieselbe, die auch die News-Seite verwendet — kein neuer
 // Card-Typ nötig.
+//
+// force-dynamic (ZEBRA-1.0-Regressionsfix): siehe app/news/page.tsx für
+// die ausführliche Begründung — identisches Problem, identischer Fix.
+export const dynamic = "force-dynamic";
+
 export default async function ZebraTvPage() {
   const items = await fetchYoutubeNews();
 
