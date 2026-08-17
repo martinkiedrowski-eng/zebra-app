@@ -1259,6 +1259,53 @@ dynamische Zuordnung brauchen, die hier nicht vorliegt; architektonisch
 sinnvoller Ort für eine spätere Integration wäre `MatchHero.tsx`
 (Matchdetail) bzw. ein neuer `NavRow`-Eintrag unter „Mehr" für ZebraFM.
 
+## Polish Fix Pass (Phase 4T)
+
+Drei gezielte Korrekturen nach dem Live-Test des Polish Sprint 01.
+
+**1) „Aktueller Spieltag"-UI entfernt:** Button aus `LigaView.tsx`
+entfernt (war missverständlich, da er direkt am angezeigten, nicht
+automatisch relevanten Spieltag stand). `relevantMatchday`-Prop dadurch
+überflüssig, ebenfalls entfernt. **Die 48h-Default-Logik selbst
+(`lib/relevantMatchday.ts::determineRelevantMatchday()`) ist exakt
+unverändert** — `app/3-liga/page.tsx` berechnet sie weiterhin (nur noch
+ausschließlich im Fall ohne `?spieltag=`, wie vor dem letzten Sprint).
+
+**2) „Tore & Ereignisse" → „Tore":** `MatchCenterView.tsx`, reine
+Textänderung. Kein neuer Event-Typ, keine Kartenlogik ergänzt — bleibt
+wie vorgegeben als Reality-Check-Thema für V1.1 vorgemerkt.
+
+**3) News „Alle" jetzt echt ligaweit — Root Cause behoben:** Die
+Ursachenanalyse bestätigte den Verdacht aus der Aufgabenstellung: die
+einzige liga3-online.de-Quelle (`lib/newsFeed/sources/liga3.ts`) fragte
+**ausschließlich die MSV-Kategorie-Feeds** ab
+(`/category/msv-duisburg/feed/` bzw. `/category/vereine-3-liga/
+msv-duisburg/feed/`) — es gab architektonisch **nie** eine ligaweite
+Quelle in der Pipeline. „Alle" zeigte praktisch nur MSV-News, weil es
+schlicht keine anderen Rohdaten zum Zeigen gab — kein Filterfehler,
+sondern eine fehlende Quelle. Live per Websuche verifiziert (aktuelle
+Artikel vom 15.–17.08.2026 zu Köln, Rostock, Regensburg, Aachen,
+Mannheim, Ingolstadt, Düsseldorf, Essen, Meppen, Würzburg u. a.
+gesichtet): der offizielle, öffentlich dokumentierte
+**Sportschau.de-RSS-Feed zur gesamten 3. Liga**
+(`https://www.sportschau.de/fussball/bundesliga3/index~rss2.xml`) ist
+eine echte, seriöse (ARD, öffentlich-rechtlich), tatsächlich ligaweite
+Quelle. Neuer Adapter `lib/newsFeed/sources/sportschau.ts` (identisches
+Muster wie `liga3.ts`), in `lib/newsFeed/aggregate.ts` als vierte Quelle
+ergänzt. Die bestehende `isMsvRelevant()`-Filterlogik
+(`lib/newsFeed/filters.ts`) musste **nicht geändert werden** — sie
+prüft bereits generisch pro Artikel (nicht pro Quelle) auf MSV-/
+Duisburg-Bezug, filtert die neuen ligaweiten Sportschau-Artikel dadurch
+automatisch korrekt: MSV-relevante Sportschau-Artikel erscheinen zu
+Recht auch unter `MSV`, alle anderen (Köln, Rostock, Aachen, …) nur
+unter `Alle`. `Videos` unverändert. `app/mehr/datenquellen/page.tsx` um
+die neue Quelle ergänzt (Transparenz).
+
+**Unverändert:** `tableEngine.ts`, Live-/Tabellen-/Match-/Home-/
+Countdown-Logik, News-Timestamp-Fixes, News-Sortierung/Deduplizierung,
+MSV-/liga3-/YouTube-Parser, Navigationskontext (`?from=...`), BottomNav,
+48h-Regel selbst, Halbzeitstände, MSV-Hervorhebung, `Videos`-Filter.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

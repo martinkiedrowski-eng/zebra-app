@@ -224,7 +224,7 @@ export function MatchCenterView({
           <>
             {match.events.length > 0 && (
               <section>
-                <SectionHeader title="Tore & Ereignisse" />
+                <SectionHeader title="Tore" />
                 <MatchEventsList events={match.events} />
               </section>
             )}

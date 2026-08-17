@@ -5,10 +5,11 @@ const SOURCES = [
   { label: "Spieldaten & Tabelle", value: "OpenLigaDB" },
   { label: "Offizielle Vereinsnews", value: "MSV Duisburg" },
   { label: "Videos", value: "ZebraTV / YouTube" },
-  { label: "3.-Liga-News", value: "liga3-online.de" },
+  { label: "MSV-News (extern)", value: "liga3-online.de" },
+  { label: "3.-Liga-weite News", value: "Sportschau (ARD)" },
 ] as const;
 
-// Bewusst nur die vier Quellen, die aktuell tatsächlich produktiv genutzt
+// Bewusst nur die Quellen, die aktuell tatsächlich produktiv genutzt
 // werden (siehe lib/newsFeed/aggregate.ts, providers/registry.ts).
 // RevierSport ausdrücklich nicht aufgeführt (HTTP 403, nicht Teil des
 // produktiven Feeds). Keine Debug-/technischen Details hier — die stehen

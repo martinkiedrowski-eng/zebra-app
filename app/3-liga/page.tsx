@@ -17,11 +17,12 @@ import type { MatchdayResult } from "@/providers/football/FootballDataProvider";
 // TATSÄCHLICH aktuellen Spieltag abbildet (siehe `matchday`-Prop in
 // LigaView, unverändert).
 //
-// Polish Sprint 01, Punkt 3+4: relevantMatchday wird jetzt IMMER berechnet
-// (auch bei explizitem ?spieltag=), damit LigaView den "Aktueller
-// Spieltag"-Rücksprung-Button anzeigen kann, sobald der Nutzer davon
-// wegnavigiert ist. Die 48h-Regel selbst steckt unverändert-strukturell
-// in lib/relevantMatchday.ts (nur um die Zeit-Komponente erweitert).
+// Polish Fix Pass: relevantMatchday wird nur noch berechnet, wenn kein
+// explizites ?spieltag= gesetzt ist (Default-Fall) — der "Aktueller
+// Spieltag"-Rücksprung-Button, der es zuvor auch bei explizitem
+// ?spieltag= brauchte, wurde entfernt (UX-Verwirrung, siehe
+// Abschlussbericht). determineRelevantMatchday()/die 48h-Regel selbst in
+// lib/relevantMatchday.ts ist unverändert.
 export default async function DritteLigaPage({
   searchParams,
 }: {
@@ -33,12 +34,6 @@ export default async function DritteLigaPage({
     footballDataProvider.getSeasonMatchdayRange(),
   ]);
 
-  const relevantMatchdayResult = await determineRelevantMatchday(
-    currentMatchdayResult,
-    matchdayRange,
-    (n) => footballDataProvider.getMatchday(n)
-  );
-
   const requested = searchParams.spieltag ? Number.parseInt(searchParams.spieltag, 10) : NaN;
 
   let browsedMatchdayResult: MatchdayResult;
@@ -47,11 +42,11 @@ export default async function DritteLigaPage({
     browsedMatchdayResult =
       clamped === currentMatchdayResult.matchday
         ? currentMatchdayResult
-        : clamped === relevantMatchdayResult.matchday
-          ? relevantMatchdayResult
-          : await footballDataProvider.getMatchday(clamped);
+        : await footballDataProvider.getMatchday(clamped);
   } else {
-    browsedMatchdayResult = relevantMatchdayResult;
+    browsedMatchdayResult = await determineRelevantMatchday(currentMatchdayResult, matchdayRange, (n) =>
+      footballDataProvider.getMatchday(n)
+    );
   }
 
   return (
@@ -65,7 +60,6 @@ export default async function DritteLigaPage({
         browsedMatchday={browsedMatchdayResult.matchday}
         browsedMatches={browsedMatchdayResult.matches}
         matchdayRange={matchdayRange}
-        relevantMatchday={relevantMatchdayResult.matchday}
       />
     </AppShell>
   );

@@ -31,8 +31,6 @@ interface LigaViewProps {
   browsedMatchday: number;
   browsedMatches: Match[];
   matchdayRange: { min: number; max: number };
-  /** Der nach der 48h-Regel automatisch relevante Spieltag (Polish Sprint 01) — Ziel des "Aktueller Spieltag"-Rücksprungs. */
-  relevantMatchday: number;
 }
 
 export function LigaView({
@@ -44,7 +42,6 @@ export function LigaView({
   browsedMatchday,
   browsedMatches,
   matchdayRange,
-  relevantMatchday,
 }: LigaViewProps) {
   const [tab, setTab] = useState<Tab>("spieltag");
   const [devState, setDevState] = useState<DevState>("normal");
@@ -189,16 +186,6 @@ export function LigaView({
                 </Link>
               )}
             </div>
-            {browsedMatchday !== relevantMatchday && (
-              <div className="mb-3 flex justify-center">
-                <Link
-                  href={`/3-liga?spieltag=${relevantMatchday}`}
-                  className="rounded-pill bg-zebra-blue-dim px-3 py-1 font-text text-xs font-medium text-zebra-blue"
-                >
-                  Aktueller Spieltag
-                </Link>
-              </div>
-            )}
             <MatchdayList matches={browsedMatches} matchdayNumber={browsedMatchday} />
           </div>
 

@@ -2,10 +2,11 @@ import { NewsFeedItem } from "@/types/newsFeed";
 import { fetchMsvNews } from "./sources/msv";
 import { fetchYoutubeNews } from "./sources/youtube";
 import { fetchLiga3News } from "./sources/liga3";
+import { fetchSportschauNews } from "./sources/sportschau";
 import { parseGermanDateOnly } from "./format";
 
 /**
- * Führt alle drei Quellen zusammen. Jede Quelle läuft unabhängig über
+ * Führt alle vier Quellen zusammen. Jede Quelle läuft unabhängig über
  * Promise.allSettled — eine ausgefallene Quelle liefert einfach keine
  * Items, die anderen beiden erscheinen trotzdem. Es gibt bewusst keinen
  * Pfad, auf dem ein Fehler einer Quelle den gesamten Aggregator zum
@@ -14,7 +15,12 @@ import { parseGermanDateOnly } from "./format";
  * zweite Sicherheitsebene, nicht die einzige).
  */
 export async function getAggregatedNews(): Promise<NewsFeedItem[]> {
-  const results = await Promise.allSettled([fetchMsvNews(), fetchYoutubeNews(), fetchLiga3News()]);
+  const results = await Promise.allSettled([
+    fetchMsvNews(),
+    fetchYoutubeNews(),
+    fetchLiga3News(),
+    fetchSportschauNews(),
+  ]);
 
   const items: NewsFeedItem[] = [];
   for (const result of results) {
