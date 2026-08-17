@@ -1306,6 +1306,20 @@ Countdown-Logik, News-Timestamp-Fixes, News-Sortierung/Deduplizierung,
 MSV-/liga3-/YouTube-Parser, Navigationskontext (`?from=...`), BottomNav,
 48h-Regel selbst, Halbzeitstände, MSV-Hervorhebung, `Videos`-Filter.
 
+## TheSportsDB MSV Live-Verification (Debug, Phase 4U)
+
+`/debug/thesportsdb-msv` (`app/debug/thesportsdb-msv/page.tsx`, `noindex`,
+`force-dynamic`) — isolierter, temporärer Probe für den V1.1-Kader-
+Reality-Check. Ruft TheSportsDB serverseitig direkt mit fest verdrahteter
+Team-ID `133877` (MSV Duisburg) und öffentlichem Test-Key `123` auf
+(`lookupteam.php`, `lookup_all_players.php`) — kein Such-Endpunkt, kein
+Fallback, keine Mock-Daten. Zeigt `REQUESTED TEAM ID` vs. `RETURNED TEAM
+ID` explizit nebeneinander, damit sofort erkennbar ist, ob wirklich
+MSV-Daten zurückkommen. Hintergrund: ein vorheriger Recherche-Versuch aus
+einer Sandbox-Umgebung lieferte wiederholt Arsenal-Beispieldaten statt
+MSV — dieser Probe testet denselben Aufruf jetzt aus der echten
+Vercel-Umgebung. Keine produktive Logik importiert diese Datei.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
