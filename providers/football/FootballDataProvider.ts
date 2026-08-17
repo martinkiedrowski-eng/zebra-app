@@ -59,4 +59,13 @@ export interface FootballDataProvider {
    */
   getMatchday(matchday: number): Promise<MatchdayResult>;
   getSeasonMatchdayRange(): Promise<{ min: number; max: number }>;
+  /**
+   * V1.1 Stats-Tab: alle Saisonspiele (inkl. Ergebnisse bereits
+   * abgeschlossener Spiele) für Heim-/Auswärts- und Liga-Check-
+   * Berechnungen in lib/leagueStats.ts. Rein additiv, identisches Muster
+   * wie getMatchday()/getCurrentMatchday(): nutzt in
+   * OpenLigaDbFootballProvider ausschließlich die bereits vorhandene
+   * private seasonMatches()-Quelle, kein neuer Fetch, kein neues Mapping.
+   */
+  getSeasonMatches(): Promise<Match[]>;
 }

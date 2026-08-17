@@ -6,7 +6,7 @@ import { MSV_TEAM_ID } from "@/lib/constants";
 import { MOCK_NEXT_MATCH, MOCK_LAST_MATCH } from "@/mock/matches";
 import { MOCK_TABLE_EXCERPT, MOCK_MSV_FORM } from "@/mock/table";
 import { MOCK_MATCH_PREVIEW, MOCK_AVAILABILITY, MOCK_OPPONENT_FORM } from "@/mock/matchCenter";
-import { MOCK_BASELINE_TABLE, MOCK_MATCHDAY_SCHEDULED, CURRENT_MATCHDAY } from "@/mock/league";
+import { MOCK_BASELINE_TABLE, MOCK_MATCHDAY_SCHEDULED, MOCK_MATCHDAY_MATCHES, CURRENT_MATCHDAY } from "@/mock/league";
 
 /**
  * Demo-Implementierung des FootballDataProvider.
@@ -116,5 +116,10 @@ export class MockFootballProvider implements FootballDataProvider {
   /** Mock kennt nur einen Spieltag — Range kollabiert auf diesen einen Wert. */
   async getSeasonMatchdayRange(): Promise<{ min: number; max: number }> {
     return this.delay({ min: CURRENT_MATCHDAY, max: CURRENT_MATCHDAY });
+  }
+
+  /** V1.1 Stats-Tab: im Mock-Modus die einzige vorhandene Mock-Matchliste. */
+  async getSeasonMatches(): Promise<Match[]> {
+    return this.delay(MOCK_MATCHDAY_MATCHES);
   }
 }

@@ -4,10 +4,10 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Match } from "@/types/match";
-import { TableEntry } from "@/types/table";
 import { LeagueTable } from "./LeagueTable";
 import { MatchdayList } from "./MatchdayList";
 import { LiveMultiplex } from "./LiveMultiplex";
+import { StatsView } from "./StatsView";
 import { ContextCard } from "@/components/ui/ContextCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { computeLiveTable, getTeamLiveContext } from "@/lib/tableEngine";
@@ -15,9 +15,16 @@ import { buildMsvLageContext } from "@/lib/leagueContext";
 import { prioritizeMultiplex } from "@/lib/multiplex";
 import { MSV_TEAM_ID } from "@/lib/constants";
 import { formatMatchdayDateRange } from "@/lib/format";
-import { FOOTBALL_CONFIG } from "@/config/football";
+import { FormMatch, TableEntry } from "@/types/table";
+import {
+  computeMsvSeasonCheck,
+  computeHomeAwaySplit,
+  computeHomeAwayTable,
+  computeLeagueCheck,
+} from "@/lib/leagueStats";
+import { GoalGetter } from "@/lib/stats/goalGetters";
 
-type Tab = "tabelle" | "spieltag";
+type Tab = "spieltag" | "tabelle" | "stats";
 type DevState = "normal" | "multiplex";
 
 interface LigaViewProps {
@@ -31,6 +38,10 @@ interface LigaViewProps {
   browsedMatchday: number;
   browsedMatches: Match[];
   matchdayRange: { min: number; max: number };
+  /** V1.1 Stats-Tab: vollständige Saisonspiele + Form + Torjäger, serverseitig geladen. */
+  seasonMatches: Match[];
+  msvForm: FormMatch[];
+  goalGetters: GoalGetter[];
 }
 
 export function LigaView({
@@ -42,6 +53,9 @@ export function LigaView({
   browsedMatchday,
   browsedMatches,
   matchdayRange,
+  seasonMatches,
+  msvForm,
+  goalGetters,
 }: LigaViewProps) {
   const [tab, setTab] = useState<Tab>("spieltag");
   const [devState, setDevState] = useState<DevState>("normal");
@@ -65,6 +79,32 @@ export function LigaView({
   const msvEntry = liveTable.find((e) => e.teamId === MSV_TEAM_ID) ?? null;
 
   const multiplexEntries = useMemo(() => prioritizeMultiplex(matches, baselineTable), [matches, baselineTable]);
+
+  // V1.1 Stats-Tab: reine Utilities aus lib/leagueStats.ts, konsumieren
+  // die bereits vorhandene liveTable (Live-Wirkung eingerechnet) bzw.
+  // seasonMatches (für Heim/Auswärts-Splits und Liga-weite Rankings).
+  // Keine zweite Tabellenberechnung, tableEngine.ts unverändert.
+  const seasonCheck = useMemo(() => (msvEntry ? computeMsvSeasonCheck(msvEntry) : null), [msvEntry]);
+
+  const { home: homeSplit, away: awaySplit } = useMemo(
+    () => computeHomeAwaySplit(seasonMatches, MSV_TEAM_ID),
+    [seasonMatches]
+  );
+
+  const allTeamIds = useMemo(() => baselineTable.map((e) => e.teamId), [baselineTable]);
+  const homeTable = useMemo(
+    () => computeHomeAwayTable(seasonMatches, "home", allTeamIds),
+    [seasonMatches, allTeamIds]
+  );
+  const awayTable = useMemo(
+    () => computeHomeAwayTable(seasonMatches, "away", allTeamIds),
+    [seasonMatches, allTeamIds]
+  );
+
+  const leagueCheck = useMemo(
+    () => computeLeagueCheck(liveTable, MSV_TEAM_ID, homeTable, awayTable),
+    [liveTable, homeTable, awayTable]
+  );
 
   const matchdayDateRange = useMemo(
     () => formatMatchdayDateRange(browsedMatches.map((m) => m.kickoff)),
@@ -111,9 +151,9 @@ export function LigaView({
         </div>
       )}
 
-      {/* Spieltag | Tabelle */}
+      {/* Spieltag | Tabelle | Stats */}
       <div className="mb-6 flex gap-1 rounded-card border border-zebra-border bg-zebra-surface p-1">
-        {(["spieltag", "tabelle"] as const).map((t) => (
+        {(["spieltag", "tabelle", "stats"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -121,7 +161,7 @@ export function LigaView({
               tab === t ? "bg-zebra-blue text-zebra-ice" : "text-zebra-mute"
             }`}
           >
-            {t === "tabelle" ? "Tabelle" : "Spieltag"}
+            {t === "tabelle" ? "Tabelle" : t === "stats" ? "Stats" : "Spieltag"}
           </button>
         ))}
       </div>
@@ -141,6 +181,18 @@ export function LigaView({
           </div>
           <LeagueTable entries={liveTable} />
         </div>
+      )}
+
+      {tab === "stats" && (
+        <StatsView
+          seasonCheck={seasonCheck}
+          homeSplit={homeSplit}
+          awaySplit={awaySplit}
+          leagueCheck={leagueCheck}
+          form={msvForm}
+          goalGetters={goalGetters}
+          isMockMode={isMockMode}
+        />
       )}
 
       {tab === "spieltag" && (
@@ -194,38 +246,23 @@ export function LigaView({
           {msvEntry && (
             <div>
               <SectionHeader title="MSV-Status" />
+              {/*
+                V1.1: deutlich reduziert (vorher zusätzlich eine separate
+                Saisonbilanz-Karte mit S/U/N + Toren) — diese Information
+                lebt jetzt vollständig im Stats-Tab (MSV Saison-Check),
+                keine zweite Wahrheit. Der Spieltag beantwortet primär
+                "was passiert an diesem Spieltag", nicht die komplette
+                Saisonstatistik.
+              */}
               <div className="rounded-card border border-zebra-border bg-zebra-surface p-4">
-                <p className="font-display text-lg font-bold uppercase tracking-wide text-zebra-ice">
-                  {msvEntry.position}. Platz
-                </p>
-                <p className="mt-1 font-mono text-sm text-zebra-mute">
-                  {msvEntry.points} {msvEntry.points === 1 ? "Punkt" : "Punkte"} ·{" "}
-                  {msvEntry.goalsFor - msvEntry.goalsAgainst > 0 ? "+" : ""}
-                  {msvEntry.goalsFor - msvEntry.goalsAgainst} Tordifferenz
+                <p className="font-display text-base font-bold uppercase tracking-wide text-zebra-ice">
+                  {msvEntry.position}. Platz · {msvEntry.points} {msvEntry.points === 1 ? "Punkt" : "Punkte"}
                 </p>
                 {msvContext && (
-                  <p className="mt-3 border-t border-zebra-border pt-3 font-text text-sm text-zebra-ice">
+                  <p className="mt-2 border-t border-zebra-border pt-2 font-text text-sm text-zebra-mute">
                     {msvContext.headline}
                   </p>
                 )}
-              </div>
-
-              {/*
-                Saisonbilanz: bewusst dieselben msvEntry-Felder wie oben,
-                keine zweite Berechnung. "Punkte" erscheint hier absichtlich
-                NICHT noch einmal (steht bereits in MSV-Status direkt
-                darüber) — nur S/U/N und Tore, um Redundanz zu vermeiden.
-              */}
-              <div className="mt-3 rounded-card border border-zebra-border bg-zebra-surface p-4">
-                <p className="font-text text-[11px] font-medium uppercase tracking-wide text-zebra-mute">
-                  Saison {FOOTBALL_CONFIG.season}/{String(FOOTBALL_CONFIG.season + 1).slice(-2)}
-                </p>
-                <p className="mt-1.5 font-mono text-sm font-medium text-zebra-ice">
-                  {msvEntry.wins} S · {msvEntry.draws} U · {msvEntry.losses} N
-                </p>
-                <p className="mt-1 font-mono text-sm text-zebra-mute">
-                  {msvEntry.goalsFor}:{msvEntry.goalsAgainst} Tore
-                </p>
               </div>
             </div>
           )}

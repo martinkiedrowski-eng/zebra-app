@@ -1320,6 +1320,64 @@ einer Sandbox-Umgebung lieferte wiederholt Arsenal-Beispieldaten statt
 MSV — dieser Probe testet denselben Aufruf jetzt aus der echten
 Vercel-Umgebung. Keine produktive Logik importiert diese Datei.
 
+## V1.1 Sprint 01 — 3.-Liga-Stats + ZebraFM (Phase 4V)
+
+**Neuer dritter Tab „Stats"** unter „3. Liga" (`Spieltag | Tabelle |
+Stats`, Spieltag bleibt Default). Fünf Bereiche, ausschließlich aus
+bereits vorhandenen Daten berechnet — `tableEngine.ts` unverändert,
+keine zweite Tabellenberechnung.
+
+- **MSV Saison-Check:** wiederverwendet dieselbe `TableEntry` wie der
+  bestehende MSV-Status. Neue reine Utility `lib/leagueStats.ts::
+  computeMsvSeasonCheck()` leitet zusätzlich Tore/Spiel, Gegentore/Spiel
+  und Punktequote ab (deutsche Dezimaldarstellung „3,5" statt „3.5",
+  Division durch 0 sauber als `null` statt Fehler/erfundener Wert).
+- **Heim & Auswärts:** neue additive Provider-Methode
+  `getSeasonMatches()` (OpenLigaDB: reine Wiederverwendung der bereits
+  bestehenden privaten `seasonMatches()`, Mock: bestehende
+  `MOCK_MATCHDAY_MATCHES`) liefert alle Saisonspiele; `computeHomeAwaySplit()`
+  ordnet ausschließlich anhand der tatsächlichen `homeTeam.id`/`awayTeam.id`
+  zu, nur `status === "finished"`.
+- **Heim-/Auswärtstabelle:** `computeHomeAwayTable()` — **nur** wenn
+  wirklich jedes Team der Liga mindestens ein Spiel in der jeweiligen
+  Kategorie absolviert hat, sonst `null` (kein Ranking auf Basis
+  ungleicher Stichprobengrößen). Aktiviert sich automatisch im
+  Saisonverlauf, ohne künftige Codeänderung.
+- **Form – Letzte 5:** wiederverwendet `getMsvForm(5)` unverändert, zeigt
+  S/U/N + Ergebnis + Gegner statt nur Kreisen; Klick führt bei
+  zuverlässiger Match-ID (`hasReliableMatchId()`, unverändert) mit
+  korrektem Navigationskontext (`?from=3-liga`) ins Match Center.
+- **Liga-Check:** `computeLeagueCheck()` rankt MSV bei Toren (absteigend),
+  Gegentoren (aufsteigend — weniger ist besser), Tordifferenz sowie Heim/
+  Auswärts (aus der Heim-/Auswärtstabelle, `null` falls diese `null` ist).
+- **Torjäger:** neuer isolierter Fetch `lib/stats/goalGetters.ts`
+  (`getgoalgetters/{league}/{season}`, defensive PascalCase/camelCase-
+  Feldsuche, IS_MOCK_MODE-gated, nie werfend). **Bewusst keine
+  MSV-Hervorhebung** — OpenLigaDB liefert dabei laut vorherigem Reality
+  Check kein Team-Feld, kein Namens-Fuzzy-Matching, keine
+  TheSportsDB-Zuordnung. Top 5 mit „Alle anzeigen"-Umschalter.
+
+**MSV-Status unter „Spieltag" deutlich reduziert:** nur noch „1. Platz ·
+6 Punkte" + optionale bestehende Kontextaussage — die vorherige
+zusätzliche Saisonbilanz-Card (S/U/N + Tore) wurde entfernt, lebt jetzt
+vollständig im Stats-Tab (keine zweite Wahrheit).
+
+**ZebraFM unter „Mehr":** stabile externe Stream-URL
+(`https://stream.zebrafm.de/live`, live recherchiert und bestätigt),
+kein eigener Audio-Player, kein LIVE-Badge (nicht jedes Spiel wird
+tatsächlich übertragen).
+
+**`/debug/thesportsdb-msv` vollständig entfernt** — Reality Check
+abgeschlossen: TheSportsDB funktioniert technisch für Team 133877,
+liefert aber nur 10 unvollständige/veraltete MSV-Spieler → **nicht
+produktiv verwendet**, kein TheSportsDB-Code in V1.1.
+
+**Unverändert:** `tableEngine.ts`, Home (Letztes Spiel/Next Up/Countdown),
+Live-Match-Card, Match Center, Live-Tabelle, 48h-Spieltagslogik,
+Navigation zurück aus Match Center, Spiele, News (MSV/Alle/Videos),
+Bottom Navigation. Kader/Spielerprofile/ClubPlatform/ZebraTicker:
+weiterhin bewusst nicht implementiert.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

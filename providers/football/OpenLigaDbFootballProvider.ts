@@ -180,6 +180,11 @@ export class OpenLigaDbFootballProvider implements FootballDataProvider {
     return { min: Math.min(...matchdays), max: Math.max(...matchdays) };
   }
 
+  /** V1.1 Stats-Tab: reine Wiederverwendung der bereits vorhandenen privaten seasonMatches(). */
+  async getSeasonMatches(): Promise<Match[]> {
+    return this.seasonMatches();
+  }
+
   /**
    * WICHTIG: Diese Tabelle ist die Basis für computeLiveTable() und darf
    * die Ergebnisse des aktuellen Spieltags NICHT bereits enthalten — sonst

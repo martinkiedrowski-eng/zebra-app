@@ -1,4 +1,4 @@
-import { Video, Globe, Info, Database, Ticket, ShoppingBag } from "lucide-react";
+import { Video, Globe, Info, Database, Ticket, ShoppingBag, Radio } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { NavRow } from "@/components/mehr/NavRow";
@@ -26,6 +26,39 @@ export default function MehrPage() {
           sublabel="Videos, Interviews & Pressekonferenzen"
           href="/mehr/zebratv"
         />
+      </section>
+
+      {/*
+        ZebraFM (V1.1 Sprint 01): stabile, matchübergreifend identische
+        externe Stream-URL (live recherchiert und bestätigt) — kein
+        eigener Audio-Player gebaut, da dafür kein Bedarf besteht. Bewusst
+        kein LIVE-Badge: nicht jedes MSV-Spiel wird tatsächlich übertragen,
+        eine Annahme allein aus einem laufenden Spiel wäre unehrlich.
+      */}
+      <section className="mb-6">
+        <SectionHeader title="ZebraFM" />
+        <a
+          href="https://stream.zebrafm.de/live"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block rounded-card border border-zebra-border bg-zebra-surface p-4"
+        >
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-zebra-blue-dim text-zebra-blue">
+              <Radio size={20} />
+            </span>
+            <div className="min-w-0">
+              <p className="font-text text-sm font-semibold text-zebra-ice">
+                Blinden- und Fanradio des MSV Duisburg
+              </p>
+              <p className="mt-0.5 font-text text-xs text-zebra-mute">Hören, was andere sehen!</p>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center justify-center gap-1.5 rounded-control bg-zebra-blue py-2 font-text text-sm font-medium text-zebra-ice">
+            <Radio size={14} />
+            ZebraFM hören
+          </div>
+        </a>
       </section>
 
       <section className="mb-6">

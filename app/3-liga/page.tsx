@@ -3,6 +3,7 @@ import { LigaView } from "@/components/liga/LigaView";
 import { footballDataProvider, IS_MOCK_MODE } from "@/providers/registry";
 import { MOCK_MATCHDAY_MATCHES } from "@/mock/league";
 import { determineRelevantMatchday } from "@/lib/relevantMatchday";
+import { fetchGoalGetters } from "@/lib/stats/goalGetters";
 import type { MatchdayResult } from "@/providers/football/FootballDataProvider";
 
 // Server Component: Basistabelle (VOR dem aktuellen Spieltag) und der
@@ -28,11 +29,15 @@ export default async function DritteLigaPage({
 }: {
   searchParams: { spieltag?: string };
 }) {
-  const [baselineTable, currentMatchdayResult, matchdayRange] = await Promise.all([
-    footballDataProvider.getBaselineTable(),
-    footballDataProvider.getCurrentMatchday(),
-    footballDataProvider.getSeasonMatchdayRange(),
-  ]);
+  const [baselineTable, currentMatchdayResult, matchdayRange, seasonMatches, msvForm, goalGetters] =
+    await Promise.all([
+      footballDataProvider.getBaselineTable(),
+      footballDataProvider.getCurrentMatchday(),
+      footballDataProvider.getSeasonMatchdayRange(),
+      footballDataProvider.getSeasonMatches(),
+      footballDataProvider.getMsvForm(5),
+      fetchGoalGetters(),
+    ]);
 
   const requested = searchParams.spieltag ? Number.parseInt(searchParams.spieltag, 10) : NaN;
 
@@ -60,6 +65,9 @@ export default async function DritteLigaPage({
         browsedMatchday={browsedMatchdayResult.matchday}
         browsedMatches={browsedMatchdayResult.matches}
         matchdayRange={matchdayRange}
+        seasonMatches={seasonMatches}
+        msvForm={msvForm}
+        goalGetters={goalGetters}
       />
     </AppShell>
   );
