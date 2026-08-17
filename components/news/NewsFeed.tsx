@@ -6,8 +6,8 @@ import { NewsFeedCard } from "./NewsFeedCard";
 import { NewsFilterId, filterNewsFeed } from "@/lib/newsFeed/filters";
 
 const FILTERS: { id: NewsFilterId; label: string }[] = [
-  { id: "alle", label: "Alle" },
   { id: "msv", label: "MSV" },
+  { id: "alle", label: "Alle" },
   { id: "videos", label: "Videos" },
 ];
 
@@ -26,7 +26,7 @@ const EMPTY_MESSAGE: Record<NewsFilterId, string> = {
  * startet die Seite deshalb bewusst immer wieder bei "Alle".
  */
 export function NewsFeed({ items }: { items: NewsFeedItem[] }) {
-  const [filter, setFilter] = useState<NewsFilterId>("alle");
+  const [filter, setFilter] = useState<NewsFilterId>("msv");
   const filtered = filterNewsFeed(items, filter);
 
   return (

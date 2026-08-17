@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Home, Newspaper, CalendarDays, ListOrdered, Menu } from "lucide-react";
 
 const ITEMS = [
@@ -14,6 +14,12 @@ const ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // Matchdetail (/spiele/[matchId]) liegt technisch unter "/spiele", kam
+  // der Nutzer aber über 3. Liga → Spieltag → Match dorthin (siehe
+  // components/liga/MatchdayList.tsx, ?from=3-liga), soll "3. Liga" aktiv
+  // bleiben statt "Spiele" — sonst wäre der Hauptnav-Zustand irreführend.
+  const isMatchDetailFromLiga = pathname.startsWith("/spiele/") && searchParams.get("from") === "3-liga";
 
   return (
     <nav
@@ -25,7 +31,12 @@ export function BottomNav() {
         {ITEMS.map(({ href, label, icon: Icon }) => {
           // "/" darf nur bei exaktem Match aktiv sein, sonst wäre Heute
           // auch auf allen anderen Routen fälschlich aktiv.
-          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const isActive =
+            href === "/"
+              ? pathname === "/"
+              : isMatchDetailFromLiga
+                ? href === "/3-liga"
+                : pathname.startsWith(href);
           return (
             <li key={href} className="flex-1">
               <Link

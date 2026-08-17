@@ -36,6 +36,9 @@ interface HomeViewProps {
   nextMatch: Match | null;
   /** "DFB-POKAL · 1. RUNDE" bei Pokal, sonst undefined — siehe app/page.tsx. */
   nextMatchCompetitionLabel?: string;
+  /** Letztes abgeschlossenes MSV-Pflichtspiel (Liga oder Pokal) — Polish Sprint 01, Punkt 1. */
+  lastMatch: Match | null;
+  lastMatchCompetitionLabel?: string;
   liveMatch: Match | null;
   form: FormMatch[];
   table: TableEntry[];
@@ -50,6 +53,8 @@ interface HomeViewProps {
 export function HomeView({
   nextMatch,
   nextMatchCompetitionLabel,
+  lastMatch,
+  lastMatchCompetitionLabel,
   liveMatch,
   form,
   table,
@@ -128,18 +133,33 @@ export function HomeView({
             </Link>
           </section>
         ) : (
-          nextMatch && (
-            <section className="mb-6">
-              <SectionHeader title="Next Up" />
-              {hasReliableMatchId(nextMatch.id, isMockMode) ? (
-                <Link href={`/spiele/${nextMatch.id}`} className="block">
+          <>
+            {lastMatch && (
+              <section className="mb-6">
+                <SectionHeader title="Letztes Spiel" />
+                {hasReliableMatchId(lastMatch.id, isMockMode) ? (
+                  <Link href={`/spiele/${lastMatch.id}`} className="block">
+                    <MatchCard match={lastMatch} variant="featured" competitionLabel={lastMatchCompetitionLabel} />
+                  </Link>
+                ) : (
+                  <MatchCard match={lastMatch} variant="featured" competitionLabel={lastMatchCompetitionLabel} />
+                )}
+              </section>
+            )}
+
+            {nextMatch && (
+              <section className="mb-6">
+                <SectionHeader title="Next Up" />
+                {hasReliableMatchId(nextMatch.id, isMockMode) ? (
+                  <Link href={`/spiele/${nextMatch.id}`} className="block">
+                    <MatchCard match={nextMatch} variant="featured" competitionLabel={nextMatchCompetitionLabel} />
+                  </Link>
+                ) : (
                   <MatchCard match={nextMatch} variant="featured" competitionLabel={nextMatchCompetitionLabel} />
-                </Link>
-              ) : (
-                <MatchCard match={nextMatch} variant="featured" competitionLabel={nextMatchCompetitionLabel} />
-              )}
-            </section>
-          )
+                )}
+              </section>
+            )}
+          </>
         )}
 
         {(showLive ? liveMatch!.events.length > 0 : radarEvents.length > 0) && (

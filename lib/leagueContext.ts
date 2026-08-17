@@ -19,20 +19,29 @@ function direction(context: TeamLiveContext): ContextDirection {
  * "Mit diesem Stand steigt Duisburg von Platz 4 auf Platz 3."
  * "MSV bleibt auf Platz 4 · noch 2 Punkte bis Platz 3."
  * "Duisburg fällt aktuell auf Platz 6 zurück."
+ *
+ * `isFinal` (Polish Sprint 01, Punkt 12): sobald das Spiel abgeschlossen
+ * ist, ist die Positionsverschiebung kein hypothetisches "mit diesem
+ * Stand" mehr, sondern Realität — dann wird auf eine abgeschlossene
+ * Formulierung umgeschaltet, ohne neue Daten oder Prognosen zu erfinden.
  */
-export function buildMatchLiveContext(context: TeamLiveContext): LeagueContext {
+export function buildMatchLiveContext(context: TeamLiveContext, isFinal = false): LeagueContext {
   const dir = direction(context);
 
   if (dir === "up") {
     return {
-      headline: `Mit diesem Stand steigt Duisburg von Platz ${context.previousPosition} auf Platz ${context.currentPosition}.`,
+      headline: isFinal
+        ? `Duisburg übernimmt Platz ${context.currentPosition}.`
+        : `Mit diesem Stand steigt Duisburg von Platz ${context.previousPosition} auf Platz ${context.currentPosition}.`,
       direction: dir,
     };
   }
 
   if (dir === "down") {
     return {
-      headline: `Duisburg fällt aktuell auf Platz ${context.currentPosition} zurück.`,
+      headline: isFinal
+        ? `Duisburg fällt auf Platz ${context.currentPosition} zurück.`
+        : `Duisburg fällt aktuell auf Platz ${context.currentPosition} zurück.`,
       direction: dir,
     };
   }

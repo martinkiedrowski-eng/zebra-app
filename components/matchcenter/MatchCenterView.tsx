@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Match } from "@/types/match";
 import { FormMatch, TableEntry } from "@/types/table";
@@ -85,7 +86,10 @@ export function MatchCenterView({
     const matchdayMatches = state === "live" ? matchdayLive : matchdayReport;
     const liveTable = computeLiveTable(baselineTable, matchdayMatches);
     const teamContext = getTeamLiveContext(liveTable, baselineTable, MSV_TEAM_ID);
-    return teamContext ? buildMatchLiveContext(teamContext) : null;
+    // Polish Sprint 01, Punkt 12: sobald das Spiel abgeschlossen ist
+    // (state === "report"), keine "mit diesem Stand..."-Formulierung mehr
+    // — die Positionsverschiebung ist dann Realität, nicht Hypothese.
+    return teamContext ? buildMatchLiveContext(teamContext, state === "report") : null;
   }, [state, baselineTable, matchdayLive, matchdayReport, isMsvInThisMatch]);
 
   const filteredContent =
@@ -93,10 +97,27 @@ export function MatchCenterView({
       ? content.filter((c) => (CONTENT_ORDER_PREVIEW as readonly string[]).includes(c.type))
       : content.filter((c) => (CONTENT_ORDER_REPORT as readonly string[]).includes(c.type));
 
+  // Navigationskontext (Polish Sprint 01, Punkt 5): "Zurück" führt zuverlässig
+  // dorthin zurück, woher der Nutzer tatsächlich kam, statt pauschal zu
+  // Home. ?from=3-liga&spieltag=N kommt von components/liga/MatchdayList.tsx,
+  // ?from=spiele von components/spiele/NextMatchCard.tsx. Ohne den
+  // Parameter (z.B. Aufruf von Home) bleibt Home der sinnvolle Fallback.
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
+  const fromSpieltag = searchParams.get("spieltag");
+  const backHref =
+    from === "3-liga"
+      ? fromSpieltag
+        ? `/3-liga?spieltag=${fromSpieltag}`
+        : "/3-liga"
+      : from === "spiele"
+        ? "/spiele"
+        : "/";
+
   return (
     <>
       <div className="mb-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-1.5 font-text text-sm text-zebra-mute hover:text-zebra-ice">
+        <Link href={backHref} className="flex items-center gap-1.5 font-text text-sm text-zebra-mute hover:text-zebra-ice">
           <ArrowLeft size={18} strokeWidth={2} />
           Zurück
         </Link>

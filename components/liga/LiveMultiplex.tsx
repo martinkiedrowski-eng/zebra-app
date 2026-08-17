@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MultiplexEntry, getRelevanceLabel } from "@/lib/multiplex";
 import { StatusPill } from "@/components/match/StatusPill";
+import { displayScore } from "@/lib/spiele/scoreDisplay";
 
 export function LiveMultiplex({ entries }: { entries: MultiplexEntry[] }) {
   if (entries.length === 0) return null;
@@ -31,7 +32,7 @@ export function LiveMultiplex({ entries }: { entries: MultiplexEntry[] }) {
                   {match.homeTeam.shortName}
                 </span>
                 <span className="font-mono text-sm font-bold text-zebra-ice">
-                  {match.homeScore}:{match.awayScore}
+                  {displayScore(match).home}:{displayScore(match).away}
                 </span>
                 <span
                   className={`w-14 truncate font-text text-sm ${

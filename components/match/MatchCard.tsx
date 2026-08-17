@@ -1,7 +1,9 @@
 import { Match } from "@/types/match";
 import { StatusPill } from "./StatusPill";
 import { ZebraStripe } from "./ZebraStripe";
-import { formatKickoffDate, formatKickoffTime, formatCountdown } from "@/lib/format";
+import { formatKickoffDate, formatKickoffTime } from "@/lib/format";
+import { displayScore } from "@/lib/spiele/scoreDisplay";
+import { LiveCountdown } from "./LiveCountdown";
 
 type MatchCardVariant = "compact" | "featured" | "live";
 
@@ -20,9 +22,10 @@ function ScoreOrTime({ match, size = "text-xl" }: { match: Match; size?: string 
       </span>
     );
   }
+  const score = displayScore(match);
   return (
     <span className={`font-mono ${size} font-bold text-zebra-ice`}>
-      {match.homeScore ?? "–"}:{match.awayScore ?? "–"}
+      {score.home}:{score.away}
     </span>
   );
 }
@@ -65,14 +68,21 @@ export function MatchCard({ match, variant = "compact", competitionLabel }: Matc
         </div>
         <div className="flex items-center justify-between">
           <TeamLabel name={match.homeTeam.shortName} align="left" />
-          <ScoreOrTime match={match} size="text-2xl" />
+          <div className="flex flex-col items-center">
+            <ScoreOrTime match={match} size="text-2xl" />
+            {match.status === "finished" && match.halftimeScore && (
+              <span className="mt-0.5 font-mono text-[11px] text-zebra-mute">
+                Halbzeit {match.halftimeScore.home}:{match.halftimeScore.away}
+              </span>
+            )}
+          </div>
           <TeamLabel name={match.awayTeam.shortName} align="right" />
         </div>
         {match.status === "scheduled" && (
           <div className="mt-3 flex items-center justify-between border-t border-zebra-border pt-3">
             <span className="font-text text-xs text-zebra-mute">{match.venue}</span>
             <span className="font-mono text-xs font-medium text-zebra-blue">
-              {formatCountdown(match.kickoff)}
+              <LiveCountdown kickoffIso={match.kickoff} />
             </span>
           </div>
         )}

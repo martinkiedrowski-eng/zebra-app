@@ -8,9 +8,14 @@ import { NavRow } from "@/components/mehr/NavRow";
 export default function MehrPage() {
   return (
     <AppShell>
-      <header className="mb-6">
-        <p className="font-text text-xs uppercase tracking-wide text-zebra-mute">ZEBRA</p>
-        <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-zebra-ice">Mehr</h1>
+      <header className="mb-6 flex items-start justify-between">
+        <div>
+          <p className="font-text text-xs uppercase tracking-wide text-zebra-mute">ZEBRA</p>
+          <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-zebra-ice">Mehr</h1>
+        </div>
+        <span className="font-display text-base font-bold leading-none tracking-[0.18em] text-zebra-blue">
+          1902
+        </span>
       </header>
 
       <section className="mb-6">

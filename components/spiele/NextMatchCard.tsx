@@ -64,7 +64,7 @@ export function NextMatchCard({
   }
 
   return (
-    <Link href={`/spiele/${match.id}`} className={className}>
+    <Link href={`/spiele/${match.id}?from=spiele`} className={className}>
       {body}
     </Link>
   );

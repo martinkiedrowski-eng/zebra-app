@@ -6,7 +6,7 @@ import { selectHomeTableExcerpt } from "@/lib/homeTableExcerpt";
 import { MSV_TEAM_ID } from "@/lib/constants";
 import { getAggregatedNews } from "@/lib/newsFeed/aggregate";
 import { getCupMsvMatches } from "@/lib/spiele/dfbPokal";
-import { mergeUpcoming, competitionLabel } from "@/lib/spiele/aggregateSchedule";
+import { mergeUpcoming, mergeResults, competitionLabel } from "@/lib/spiele/aggregateSchedule";
 
 // Server Component: lädt über die Provider-Architektur — Mock oder
 // OpenLigaDB, je nach FOOTBALL_DATA_SOURCE (siehe providers/registry.ts).
@@ -39,19 +39,31 @@ import { mergeUpcoming, competitionLabel } from "@/lib/spiele/aggregateSchedule"
 // News: nutzt denselben produktiven Aggregator wie /news (siehe
 // lib/newsFeed/aggregate.ts) — unabhängig vom Football-Mock/OpenLigaDB-
 // Modus, echte Quellen, echte Daten.
+// Polish Sprint 01, Punkt 1: "Letztes Spiel" ist das chronologisch letzte
+// abgeschlossene MSV-PFLICHTSPIEL aus 3. Liga + DFB-Pokal — exakt
+// dieselbe Aggregation wie "Nächstes Spiel" (getRecentMsvResults() +
+// getCupMsvMatches() + mergeResults()), keine zweite Pipeline. Bleibt
+// nach Abpfiff jetzt zusätzlich sichtbar, statt sofort dem NEXT-UP-Fokus
+// zu weichen.
 export default async function HomePage() {
-  const [upcomingLeague, cup, liveMatch, form, fullTable, radarEvents, newsItems] = await Promise.all([
-    footballDataProvider.getUpcomingMsvMatches(3),
-    getCupMsvMatches(3, 0),
-    IS_MOCK_MODE ? Promise.resolve(MOCK_LIVE_MATCH) : footballDataProvider.getLiveMatch(),
-    footballDataProvider.getMsvForm(5),
-    footballDataProvider.getTable(),
-    newsProvider.getRadarEvents(3),
-    getAggregatedNews(),
-  ]);
+  const [upcomingLeague, resultsLeague, cup, liveMatch, form, fullTable, radarEvents, newsItems] = await Promise.all(
+    [
+      footballDataProvider.getUpcomingMsvMatches(3),
+      footballDataProvider.getRecentMsvResults(1),
+      getCupMsvMatches(3, 1),
+      IS_MOCK_MODE ? Promise.resolve(MOCK_LIVE_MATCH) : footballDataProvider.getLiveMatch(),
+      footballDataProvider.getMsvForm(5),
+      footballDataProvider.getTable(),
+      newsProvider.getRadarEvents(3),
+      getAggregatedNews(),
+    ]
+  );
 
   const upcomingAll = mergeUpcoming(upcomingLeague, cup.upcoming);
   const nextEntry = upcomingAll[0] ?? null;
+
+  const resultsAll = mergeResults(resultsLeague, cup.results);
+  const lastEntry = resultsAll[0] ?? null;
 
   const table = selectHomeTableExcerpt(fullTable, MSV_TEAM_ID, 5);
   const topNews = newsItems.slice(0, 3);
@@ -61,6 +73,8 @@ export default async function HomePage() {
       <HomeView
         nextMatch={nextEntry ? nextEntry.match : null}
         nextMatchCompetitionLabel={nextEntry ? competitionLabel(nextEntry) : undefined}
+        lastMatch={lastEntry ? lastEntry.match : null}
+        lastMatchCompetitionLabel={lastEntry ? competitionLabel(lastEntry) : undefined}
         liveMatch={liveMatch}
         form={form}
         table={table}

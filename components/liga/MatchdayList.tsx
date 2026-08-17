@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Match } from "@/types/match";
 import { StatusPill } from "@/components/match/StatusPill";
 import { formatKickoffTime, formatDayGroupKey, formatDayGroupLabel } from "@/lib/format";
+import { displayScore } from "@/lib/spiele/scoreDisplay";
 
 interface DayGroup {
   key: string;
@@ -33,7 +34,15 @@ function groupByDay(matches: Match[]): DayGroup[] {
     }));
 }
 
-export function MatchdayList({ matches }: { matches: Match[] }) {
+/**
+ * `matchdayNumber` (optional) hängt den Navigationskontext `?from=3-liga&spieltag=N`
+ * an die Match-Center-Links an (Polish Sprint 01, Punkt 5) — damit die
+ * Matchdetailseite weiß, dass sie von hier kam, und "Zurück" zuverlässig
+ * zu genau diesem Spieltag zurückführt statt pauschal zu Home. Ohne diese
+ * Prop (z.B. falls die Komponente je anderswo ohne Spieltagsbezug genutzt
+ * würde) verlinkt die Zeile weiterhin ohne Kontext-Parameter.
+ */
+export function MatchdayList({ matches, matchdayNumber }: { matches: Match[]; matchdayNumber?: number }) {
   const groups = groupByDay(matches);
 
   return (
@@ -45,7 +54,7 @@ export function MatchdayList({ matches }: { matches: Match[] }) {
           </p>
           <div className="space-y-2">
             {group.matches.map((match) => (
-              <MatchdayRow key={match.id} match={match} />
+              <MatchdayRow key={match.id} match={match} matchdayNumber={matchdayNumber} />
             ))}
           </div>
         </div>
@@ -54,17 +63,23 @@ export function MatchdayList({ matches }: { matches: Match[] }) {
   );
 }
 
-function MatchdayRow({ match }: { match: Match }) {
+function MatchdayRow({ match, matchdayNumber }: { match: Match; matchdayNumber?: number }) {
   // Die große Status-Pille war für "bevorstehend" reiner Platzverbrauch —
   // Uhrzeit bzw. Endstand machen den Zustand bereits eindeutig. Für
   // live/halftime bleibt die Pille, weil das ein echter, vorhandener
   // Status ist, kein neu erfundener.
   const showPill = match.status === "live" || match.status === "halftime";
   const hasValidKickoff = !Number.isNaN(new Date(match.kickoff).getTime());
+  const score = displayScore(match);
+
+  const href =
+    matchdayNumber !== undefined
+      ? `/spiele/${match.id}?from=3-liga&spieltag=${matchdayNumber}`
+      : `/spiele/${match.id}`;
 
   return (
     <Link
-      href={`/spiele/${match.id}`}
+      href={href}
       className={`relative flex items-center gap-3 overflow-hidden rounded-card border px-4 py-3 transition-colors hover:border-zebra-blue/50 ${
         match.isMsvMatch ? "border-zebra-blue/40 bg-zebra-blue-dim/40" : "border-zebra-border bg-zebra-surface"
       }`}
@@ -87,15 +102,22 @@ function MatchdayRow({ match }: { match: Match }) {
         </span>
       </div>
 
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 text-center">
         {match.status === "scheduled" ? (
           <span className="font-mono text-xs text-zebra-mute">
             {hasValidKickoff ? formatKickoffTime(match.kickoff) : "–"}
           </span>
         ) : (
-          <span className="font-mono text-sm font-bold text-zebra-ice">
-            {match.homeScore}:{match.awayScore}
-          </span>
+          <>
+            <span className="font-mono text-sm font-bold text-zebra-ice">
+              {score.home}:{score.away}
+            </span>
+            {match.status === "finished" && match.halftimeScore && (
+              <span className="block font-mono text-[10px] text-zebra-mute">
+                ({match.halftimeScore.home}:{match.halftimeScore.away})
+              </span>
+            )}
+          </>
         )}
       </div>
 

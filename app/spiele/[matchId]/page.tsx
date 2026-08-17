@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { MatchCenterView } from "@/components/matchcenter/MatchCenterView";
 import { footballDataProvider, newsProvider, IS_MOCK_MODE } from "@/providers/registry";
@@ -54,21 +55,23 @@ export default async function MatchCenterPage({ params }: MatchPageProps) {
 
   return (
     <AppShell>
-      <MatchCenterView
-        isMockMode={IS_MOCK_MODE}
-        previewMatch={previewMatch}
-        liveMatch={liveMatch}
-        reportMatch={reportMatch}
-        homeForm={homeForm}
-        awayForm={awayForm}
-        homeTableEntry={homeTableEntry}
-        awayTableEntry={awayTableEntry}
-        availability={availability}
-        content={content}
-        baselineTable={baselineTable}
-        matchdayLive={matchdayLive}
-        matchdayReport={matchdayReport}
-      />
+      <Suspense fallback={null}>
+        <MatchCenterView
+          isMockMode={IS_MOCK_MODE}
+          previewMatch={previewMatch}
+          liveMatch={liveMatch}
+          reportMatch={reportMatch}
+          homeForm={homeForm}
+          awayForm={awayForm}
+          homeTableEntry={homeTableEntry}
+          awayTableEntry={awayTableEntry}
+          availability={availability}
+          content={content}
+          baselineTable={baselineTable}
+          matchdayLive={matchdayLive}
+          matchdayReport={matchdayReport}
+        />
+      </Suspense>
     </AppShell>
   );
 }

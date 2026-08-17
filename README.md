@@ -1188,6 +1188,77 @@ nach „Minute" durchsucht, statt einen Feldnamen zu raten. `tableEngine.ts`,
 `leagueContext.ts`, `multiplex.ts` und der OpenLigaDB-Mapper wurden dafür
 ausschließlich importiert/gelesen, nicht verändert.
 
+## ZEBRA Polish Sprint 01 (Phase 4S)
+
+Umfangreicher UX-Polish nach dem ersten echten Live-Matchday-Test.
+Vollständiger Abschlussbericht im Chat — Kurzfassung hier.
+
+**Umgesetzt:**
+1. **Home „Letztes Spiel":** neue Sektion vor „Next Up", dynamisch über
+   `getRecentMsvResults(1)` + `getCupMsvMatches(3,1)` +
+   `mergeResults()` — dieselbe Aggregation wie „Next Up", keine
+   zweite Pipeline. Bleibt nach Abpfiff sichtbar statt sofort zu
+   verschwinden.
+2. **3.-Liga Tab-Reihenfolge:** „Spieltag" jetzt zuerst und Default-Tab,
+   „Tabelle" unverändert als zweiter Tab.
+3. **48h-Spieltagsregel** (`lib/relevantMatchday.ts`, erweitert): ist der
+   aktuelle Spieltag abgeschlossen und der nächste noch nicht gestartet,
+   bleibt der zuletzt abgeschlossene Spieltag Default, bis der erste
+   Kickoff des nächsten Spieltags weniger als 48h entfernt ist — mit
+   Node-Simulation exakt gegen das Aufgaben-Szenario getestet.
+4. **„Aktueller Spieltag"-Rücksprung:** dezenter Button in der
+   Spieltagsnavigation, erscheint nur wenn der durchblätterte vom
+   automatisch relevanten Spieltag abweicht.
+5. **Navigationskontext:** `?from=3-liga&spieltag=N` (von
+   `MatchdayList.tsx`) bzw. `?from=spiele` (von `NextMatchCard.tsx`) —
+   Match Center liest das über `useSearchParams()` und leitet „Zurück"
+   sowie den aktiven BottomNav-Tab korrekt ab, statt pauschal zu Home zu
+   springen. Dafür sind `Suspense`-Boundaries um `BottomNav`
+   (`AppShell.tsx`) und `MatchCenterView`
+   (`app/spiele/[matchId]/page.tsx`) hinzugekommen — Next.js verlangt das
+   für `useSearchParams()`.
+6. **News-Filter:** Reihenfolge jetzt `MSV | Alle | Videos`, `MSV` ist
+   Default. Die Filterlogik selbst (`isMsvRelevant()`) ist unverändert —
+   „Alle" zeigte bereits vorher den kompletten, ungefilterten Feed inkl.
+   ligaweiter liga3-News.
+7. **„1902"** ergänzt auf News-, Spiele-, 3.-Liga- und Mehr-Header —
+   exakt dasselbe Pattern wie auf Home.
+8. **Countdown < 60 Minuten** (`components/match/LiveCountdown.tsx`,
+   neu): rein clientseitige, sekündlich tickende MM:SS-Anzeige, oberhalb
+   60 Minuten weiterhin die bestehende kompakte `formatCountdown()`-
+   Darstellung. Setzt niemals selbst LIVE. Eingesetzt in `MatchCard.tsx`
+   (Home) und `MatchHero.tsx` (Match Center).
+9. **Halbzeitstand konsequent:** `MatchCard.tsx` zeigt bei `finished` +
+   vorhandenem `halftimeScore` eine zweite Zeile „Halbzeit X:Y",
+   `MatchdayList.tsx` das kompakte „(X:Y)"-Format darunter — nur bei
+   tatsächlich abgeschlossenen Spielen, nie während LIVE erzwungen.
+10. **Live 0:0 statt „:"** — neue zentrale Utility
+    `lib/spiele/scoreDisplay.ts` (`displayScore()`), angewendet in
+    `MatchCard.tsx`, `MatchdayList.tsx`, `MatchHero.tsx` und
+    `LiveMultiplex.tsx`: bei `live`/`halftime`/`finished` ohne
+    vorhandenes Ergebnis wird jetzt „0" statt `null`/„–" gerendert, nie
+    mehr ein bloßes „:".
+11. **Match-Ereignisse:** unverändert — keine Kartenereignisse erfunden,
+    keine externe Quelle ergänzt (Reality Check hatte bestätigt: OpenLigaDB
+    liefert das aktuell nicht belastbar).
+12. **Live- vs. finale Tabellenaussage:** `buildMatchLiveContext()`
+    (`lib/leagueContext.ts`) hat jetzt einen optionalen `isFinal`-
+    Parameter — Match Center übergibt `state === "report"`, dadurch z. B.
+    „Duisburg übernimmt Platz 1." statt der hypothetischen „Mit diesem
+    Stand steigt..."-Formulierung nach Abpfiff. `buildMsvLageContext()`
+    (3.-Liga-Seite) war bereits neutral formuliert, keine Änderung nötig.
+14. **Tabellentrenner:** unverändert bestätigt — keine Textlabels wieder
+    eingeführt.
+
+**Unverändert:** `tableEngine.ts`, OpenLigaDB-Providerlogik,
+Pokal-Isolation, News-Timestamp-Fixes, News-Sortierung, Formberechnung
+(`getTeamForm`), `multiplex.ts` (nur gelesen), Kader/Spielerprofile (nicht
+Teil dieses Sprints). ZebraTicker/ZebraFM: bewusst nicht implementiert
+(Punkt 17) — der ClubPlatform-Link ist match-spezifisch und würde eine
+dynamische Zuordnung brauchen, die hier nicht vorliegt; architektonisch
+sinnvoller Ort für eine spätere Integration wäre `MatchHero.tsx`
+(Matchdetail) bzw. ein neuer `NavRow`-Eintrag unter „Mehr" für ZebraFM.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus

@@ -17,13 +17,11 @@ import type { MatchdayResult } from "@/providers/football/FootballDataProvider";
 // TATSÄCHLICH aktuellen Spieltag abbildet (siehe `matchday`-Prop in
 // LigaView, unverändert).
 //
-// Product Audit Batch 1B: OHNE ?spieltag= wird jetzt nicht mehr blind der
-// von OpenLigaDB gemeldete "aktuelle" Spieltag übernommen, sondern über
-// lib/relevantMatchday.ts::determineRelevantMatchday() defensiv geprüft,
-// ob dieser bereits vollständig abgeschlossen ist — falls ja, wird
-// schrittweise (max. 3 zusätzliche Abrufe über die bereits bestehende
-// getMatchday()-Methode, keine neue Fetch-Architektur) der nächste noch
-// offene Spieltag gesucht, sonst der letzte verfügbare gezeigt.
+// Polish Sprint 01, Punkt 3+4: relevantMatchday wird jetzt IMMER berechnet
+// (auch bei explizitem ?spieltag=), damit LigaView den "Aktueller
+// Spieltag"-Rücksprung-Button anzeigen kann, sobald der Nutzer davon
+// wegnavigiert ist. Die 48h-Regel selbst steckt unverändert-strukturell
+// in lib/relevantMatchday.ts (nur um die Zeit-Komponente erweitert).
 export default async function DritteLigaPage({
   searchParams,
 }: {
@@ -35,6 +33,12 @@ export default async function DritteLigaPage({
     footballDataProvider.getSeasonMatchdayRange(),
   ]);
 
+  const relevantMatchdayResult = await determineRelevantMatchday(
+    currentMatchdayResult,
+    matchdayRange,
+    (n) => footballDataProvider.getMatchday(n)
+  );
+
   const requested = searchParams.spieltag ? Number.parseInt(searchParams.spieltag, 10) : NaN;
 
   let browsedMatchdayResult: MatchdayResult;
@@ -43,11 +47,11 @@ export default async function DritteLigaPage({
     browsedMatchdayResult =
       clamped === currentMatchdayResult.matchday
         ? currentMatchdayResult
-        : await footballDataProvider.getMatchday(clamped);
+        : clamped === relevantMatchdayResult.matchday
+          ? relevantMatchdayResult
+          : await footballDataProvider.getMatchday(clamped);
   } else {
-    browsedMatchdayResult = await determineRelevantMatchday(currentMatchdayResult, matchdayRange, (n) =>
-      footballDataProvider.getMatchday(n)
-    );
+    browsedMatchdayResult = relevantMatchdayResult;
   }
 
   return (
@@ -61,6 +65,7 @@ export default async function DritteLigaPage({
         browsedMatchday={browsedMatchdayResult.matchday}
         browsedMatches={browsedMatchdayResult.matches}
         matchdayRange={matchdayRange}
+        relevantMatchday={relevantMatchdayResult.matchday}
       />
     </AppShell>
   );

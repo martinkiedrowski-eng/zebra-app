@@ -1,7 +1,9 @@
 import { Match } from "@/types/match";
 import { StatusPill } from "@/components/match/StatusPill";
 import { ZebraStripe } from "@/components/match/ZebraStripe";
-import { formatKickoffDate, formatKickoffTime, formatCountdown } from "@/lib/format";
+import { formatKickoffDate, formatKickoffTime } from "@/lib/format";
+import { LiveCountdown } from "@/components/match/LiveCountdown";
+import { displayScore } from "@/lib/spiele/scoreDisplay";
 
 export function MatchHero({ match }: { match: Match }) {
   const isLive = match.status === "live" || match.status === "halftime";
@@ -35,7 +37,7 @@ export function MatchHero({ match }: { match: Match }) {
           <span
             className={`font-mono font-bold text-zebra-ice ${isLive ? "text-5xl" : "text-4xl"}`}
           >
-            {match.homeScore}:{match.awayScore}
+            {displayScore(match).home}:{displayScore(match).away}
           </span>
         )}
 
@@ -56,7 +58,7 @@ export function MatchHero({ match }: { match: Match }) {
         </span>
         {match.status === "scheduled" && (
           <span className="font-mono text-xs font-medium text-zebra-blue">
-            {formatCountdown(match.kickoff)}
+            <LiveCountdown kickoffIso={match.kickoff} />
           </span>
         )}
       </div>

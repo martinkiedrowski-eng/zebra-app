@@ -31,6 +31,8 @@ interface LigaViewProps {
   browsedMatchday: number;
   browsedMatches: Match[];
   matchdayRange: { min: number; max: number };
+  /** Der nach der 48h-Regel automatisch relevante Spieltag (Polish Sprint 01) — Ziel des "Aktueller Spieltag"-Rücksprungs. */
+  relevantMatchday: number;
 }
 
 export function LigaView({
@@ -42,8 +44,9 @@ export function LigaView({
   browsedMatchday,
   browsedMatches,
   matchdayRange,
+  relevantMatchday,
 }: LigaViewProps) {
-  const [tab, setTab] = useState<Tab>("tabelle");
+  const [tab, setTab] = useState<Tab>("spieltag");
   const [devState, setDevState] = useState<DevState>("normal");
 
   // Im openligadb-Modus gibt es keinen künstlichen "Multiplex Live"-
@@ -76,9 +79,14 @@ export function LigaView({
 
   return (
     <>
-      <header className="mb-4">
-        <p className="font-text text-xs uppercase tracking-wide text-zebra-mute">ZEBRA</p>
-        <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-zebra-ice">3. Liga</h1>
+      <header className="mb-4 flex items-start justify-between">
+        <div>
+          <p className="font-text text-xs uppercase tracking-wide text-zebra-mute">ZEBRA</p>
+          <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-zebra-ice">3. Liga</h1>
+        </div>
+        <span className="font-display text-base font-bold leading-none tracking-[0.18em] text-zebra-blue">
+          1902
+        </span>
       </header>
 
       {/* Dev-/Demo-Umschalter — nur Mock-Modus. */}
@@ -106,9 +114,9 @@ export function LigaView({
         </div>
       )}
 
-      {/* Tabelle | Spieltag */}
+      {/* Spieltag | Tabelle */}
       <div className="mb-6 flex gap-1 rounded-card border border-zebra-border bg-zebra-surface p-1">
-        {(["tabelle", "spieltag"] as const).map((t) => (
+        {(["spieltag", "tabelle"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -181,7 +189,17 @@ export function LigaView({
                 </Link>
               )}
             </div>
-            <MatchdayList matches={browsedMatches} />
+            {browsedMatchday !== relevantMatchday && (
+              <div className="mb-3 flex justify-center">
+                <Link
+                  href={`/3-liga?spieltag=${relevantMatchday}`}
+                  className="rounded-pill bg-zebra-blue-dim px-3 py-1 font-text text-xs font-medium text-zebra-blue"
+                >
+                  Aktueller Spieltag
+                </Link>
+              </div>
+            )}
+            <MatchdayList matches={browsedMatches} matchdayNumber={browsedMatchday} />
           </div>
 
           {isViewingCurrentMatchday && hasLiveMatches && <LiveMultiplex entries={multiplexEntries} />}

@@ -33,9 +33,14 @@ export default async function NewsPage() {
 
   return (
     <AppShell>
-      <header className="mb-4">
-        <p className="font-text text-xs uppercase tracking-wide text-zebra-mute">ZEBRA</p>
-        <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-zebra-ice">News</h1>
+      <header className="mb-4 flex items-start justify-between">
+        <div>
+          <p className="font-text text-xs uppercase tracking-wide text-zebra-mute">ZEBRA</p>
+          <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-zebra-ice">News</h1>
+        </div>
+        <span className="font-display text-base font-bold leading-none tracking-[0.18em] text-zebra-blue">
+          1902
+        </span>
       </header>
 
       <NewsFeed items={items} />
