@@ -1378,6 +1378,24 @@ Navigation zurück aus Match Center, Spiele, News (MSV/Alle/Videos),
 Bottom Navigation. Kader/Spielerprofile/ClubPlatform/ZebraTicker:
 weiterhin bewusst nicht implementiert.
 
+## Torjäger Live-Debug-Probe (Phase 4W)
+
+`/debug/v11-goalgetters` (`app/debug/v11-goalgetters/page.tsx`, `noindex`,
+`force-dynamic`) — temporärer, isolierter Live-Reality-Check für die
+Voglsammer-Torjäger-Diskrepanz (App zeigt 2, erwartet werden 3). Ruft
+OpenLigaDB komplett unabhängig von `lib/stats/goalGetters.ts` auf (keine
+Transformation durch bestehenden Code): A) rohe `getgoalgetters`-Antwort
+inkl. aller Voglsammer-Einträge einzeln + Summe, B) Stichprobe weiterer
+Torjäger, C) rohe Saisonspiele (finished/mit-ohne Goal-Array), D)
+Goal-Event-Rohfelder inkl. expliziter Prüfung auf eine stabile
+`GoalGetterID`, E) alle Voglsammer-Treffer in den Match-Goal-Daten
+einzeln, F) testweise Selbstaggregation (nur Diagnose, Eigentore
+ausgeschlossen, ID- oder Namens-basiert je nach Datenlage), G) direkter
+Dreifachvergleich (getgoalgetters RAW vs. aktuelle ZEBRA-Verarbeitung vs.
+Selbstaggregation), H) Datenqualitäts-Check (doppelte IDs/Namen, fehlende
+Felder, Eigentore, Elfmeter). Keine produktive Datei importiert diese
+Route, keine bestehende Torjäger-/Stats-Logik verändert.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
