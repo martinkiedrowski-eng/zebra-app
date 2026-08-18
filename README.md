@@ -1432,6 +1432,26 @@ Provider-Matchlogik. Der separat entdeckte 6.-Spieltag-Terminfehler
 (15.09. vs. 16.09.) wird hier bewusst **nicht** bearbeitet — eigener
 Reality Check folgt.
 
+## Spieltag-6-Kickoff-Debug-Probe (Phase 4Y)
+
+`/debug/matchday6-kickoffs` (`app/debug/matchday6-kickoffs/page.tsx`,
+`noindex`, `force-dynamic`) — temporärer, isolierter Live-Reality-Check
+für die gemeldete Terminabweichung bei Duisburg–Havelse (ZEBRA zeigt
+Mi. 16.09., extern gemeldet Di. 15.09.). Ruft OpenLigaDB unabhängig für
+Spieltag 6 ab und stellt die rohen `MatchDateTime`-Werte direkt neben das
+Ergebnis der **echten, unveränderten produktiven Normalisierung**
+(`mapOldbMatch()` aus `providers/football/openligadb/mapMatch.ts`,
+read-only importiert) — für alle zehn Spiele, mit explizitem RAW-vs-
+ZEBRA-Identisch-Vergleich und einer prominenten Sektion für den
+Duisburg–Havelse-Kontrollfall. Codeanalyse vorab (`MatchdayList`,
+`mapMatch.ts`, `relevantMatchday.ts`, `LigaView.tsx`, Formatter) fand
+**keine** Matchday-Level-Datum-Fallback-Logik, die einzelne Match-
+Kickoffs überschreiben würde — `pickString()` liefert bei fehlendem Feld
+einen leeren String, nie einen geteilten/gruppenweiten Wert.
+Externe Gegenprüfung (nur zur Diagnose, zwei unabhängige Quellen)
+bestätigt Di. 15.09. 19:00 als den korrekten realen Termin. Keine
+produktive Datei verändert, keine Komponente importiert diese Route.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
