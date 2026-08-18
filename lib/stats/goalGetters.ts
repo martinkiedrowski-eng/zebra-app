@@ -18,6 +18,31 @@ export interface GoalGetter {
   goals: number;
 }
 
+/**
+ * Explicit aliases for verified OpenLigaDB duplicate goalgetter records.
+ * Do not add fuzzy matching here.
+ *
+ * Live-Debug (V1.1) hat bestätigt: OpenLigaDB liefert für denselben
+ * realen Spieler teils zwei unterschiedliche Datensätze mit
+ * unterschiedlicher goalGetterId (bestätigter Fall: "A. Voglsammer"
+ * (ID 18686, 2 Tore) und "Andreas Voglsammer" (ID 17333, 1 Tor) — real
+ * derselbe Spieler, zusammen 3 Tore). Eine ID-basierte Aggregation würde
+ * das NICHT lösen, da die IDs selbst schon unterschiedlich sind — daher
+ * bewusst eine kleine, manuell kontrollierte Namens-Alias-Liste statt
+ * automatischer Erkennung. Nur nachweislich bestätigte Dubletten
+ * ergänzen, niemals generisch nach Nachnamen zusammenführen (z.B.
+ * "Müller"/"Schmidt"/"Wagner" könnten echte unterschiedliche Spieler
+ * sein).
+ */
+const GOAL_GETTER_ALIASES: Record<string, string> = {
+  "A. Voglsammer": "Andreas Voglsammer",
+  "Andreas Voglsammer": "Andreas Voglsammer",
+};
+
+function canonicalGoalGetterName(name: string): string {
+  return GOAL_GETTER_ALIASES[name] ?? name;
+}
+
 function raw(obj: unknown, ...keys: string[]): unknown {
   if (typeof obj !== "object" || obj === null) return undefined;
   const o = obj as Record<string, unknown>;
@@ -53,10 +78,23 @@ export async function fetchGoalGetters(): Promise<GoalGetter[]> {
         if (typeof name !== "string" || !name.trim() || goals === null) return null;
         return { name: name.trim(), goals };
       })
-      .filter((e): e is { name: string; goals: number } => e !== null)
+      .filter((e): e is { name: string; goals: number } => e !== null);
+
+    // Bestätigte OpenLigaDB-Dubletten vor Sortierung/Ausgabe zu einem
+    // Spieler zusammenführen (siehe GOAL_GETTER_ALIASES oben). Reihenfolge
+    // der zuerst gesehenen Schreibweise bleibt für die Ausgabe irrelevant —
+    // der kanonische Name ist immer derselbe.
+    const merged = new Map<string, number>();
+    for (const entry of parsed) {
+      const canonical = canonicalGoalGetterName(entry.name);
+      merged.set(canonical, (merged.get(canonical) ?? 0) + entry.goals);
+    }
+
+    const sorted = Array.from(merged.entries())
+      .map(([name, goals]) => ({ name, goals }))
       .sort((a, b) => b.goals - a.goals);
 
-    return parsed.map((e, i) => ({ rank: i + 1, name: e.name, goals: e.goals }));
+    return sorted.map((e, i) => ({ rank: i + 1, name: e.name, goals: e.goals }));
   } catch {
     return [];
   }

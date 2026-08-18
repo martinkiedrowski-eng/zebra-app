@@ -1396,6 +1396,42 @@ Selbstaggregation), H) Datenqualitäts-Check (doppelte IDs/Namen, fehlende
 Felder, Eigentore, Elfmeter). Keine produktive Datei importiert diese
 Route, keine bestehende Torjäger-/Stats-Logik verändert.
 
+## Torjäger-Fix: bestätigte OpenLigaDB-Dublette normalisiert (Phase 4X)
+
+Live-Debug (`/debug/v11-goalgetters`, jetzt entfernt) hat die Root Cause
+eindeutig bestätigt: OpenLigaDB liefert **Andreas Voglsammer als zwei
+unterschiedliche Datensätze mit unterschiedlicher `goalGetterId`**
+(„A. Voglsammer", ID 18686, 2 Tore; „Andreas Voglsammer", ID 17333, 1 Tor
+— zusammen korrekt 3 Tore). Eine ID-basierte Aggregation hätte das
+**nicht** gelöst, da bereits die IDs selbst unterschiedlich sind.
+
+**Fix in `lib/stats/goalGetters.ts`:** kleine, explizite, manuell
+kontrollierte `GOAL_GETTER_ALIASES`-Konfiguration — **kein Fuzzy
+Matching, keine generische Nachnamen-Zusammenführung** (z. B. „Müller"/
+„Schmidt" könnten echte unterschiedliche Spieler sein). Jeder rohe
+Eintrag wird vor der Sortierung auf einen kanonischen Namen normalisiert,
+gleichnamige kanonische Einträge werden per `goalCount`-Summe
+zusammengeführt, danach erst sortiert. Mit Node-Simulation gegen alle
+vier geforderten Regressionsfälle getestet: Voglsammer → 3 Tore,
+Lobinger/Ndikom/Hermes/Fein unverändert bei je 2, Gesamtzahl der
+Torjäger sinkt um genau 1, Summe aller Tore vor/nach Normalisierung
+identisch (11 = 11 im Testfall) — kein Tor geht beim Merge verloren.
+
+Kein ID-Feld im `GoalGetter`-Modell nötig (wurde nie exponiert) — bewusst
+minimal geblieben, keine unnötige Modellerweiterung. `StatsView.tsx`
+unverändert, stellt das korrigierte Ergebnis automatisch richtig dar.
+
+**`/debug/v11-goalgetters` vollständig entfernt** — keine separate
+Hilfslogik existierte außerhalb der einen Datei, nichts weiter
+aufzuräumen.
+
+**Unverändert:** `tableEngine.ts`, Saison-Check, Heim/Auswärts,
+Liga-Check, Form, ZebraFM, Home, Spiele, Match Center, 3.-Liga-Spieltag,
+Tabelle, Live-Tabelle, News, Navigation, 48h-Spieltagslogik,
+Provider-Matchlogik. Der separat entdeckte 6.-Spieltag-Terminfehler
+(15.09. vs. 16.09.) wird hier bewusst **nicht** bearbeitet — eigener
+Reality Check folgt.
+
 ## PWA-Icons
 
 Eigenes, minimalistisches Icon-System (kein MSV-Wappen): abstraktes "Z" aus
